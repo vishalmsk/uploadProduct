@@ -1027,7 +1027,10 @@ function createProductStructureJson(_productStructure, _problemInfo, currentProd
         {
             _unitObj.displayOrder = unitDescObj.displayOrder * 1;
         }
-    
+        if(unitDescObj.navigationId)
+        {
+            _unitObj.navID = unitDescObj.navigationId ;
+        }
         _unitObj.containers = [];
         _unitObj.contents = [];
         //console.log("_unitObj.menuText = ",_unitObj.menuText);
@@ -1078,6 +1081,10 @@ function createProductStructureJson(_productStructure, _problemInfo, currentProd
             if(chapterDescObj.displayOrder)
             {
                 _chapterObj.displayOrder = chapterDescObj.displayOrder * 1;
+            }
+            if(chapterDescObj.navigationId)
+            {
+                _chapterObj.navID = chapterDescObj.navigationId ;
             }
             _chapterObj.containers = []; 
             _chapterObj.contents = [];
@@ -1144,6 +1151,10 @@ function createProductStructureJson(_productStructure, _problemInfo, currentProd
                 if(lessonDescObj.displayOrder)
                 {
                     _lessonObj.displayOrder = lessonDescObj.displayOrder * 1;
+                }
+                if(lessonDescObj.navigationId)
+                {
+                    _lessonObj.navID = lessonDescObj.navigationId ;
                 }
                 _lessonObj.questions = [];
                 _lessonObj.sublessons = [];
@@ -1372,6 +1383,7 @@ function getColumnDesc(unit, lesson, sublesson, toc, type) {
   let _notAddColon;
   let _colonStr;
   let _displayOrder;
+  let _navigationId;
 
   if (type == "unit") {
     if (toc[unit]) {
@@ -1379,6 +1391,7 @@ function getColumnDesc(unit, lesson, sublesson, toc, type) {
         _desc = toc[unit].children["EMPTY"].desc;
         _notAddColon = toc[unit].children["EMPTY"].notAddColon;
         _displayOrder = toc[unit].children["EMPTY"].displayOrder * 1;
+        _navigationId = toc[unit].children["EMPTY"].navigationId;
       }
     }
   }
@@ -1389,6 +1402,7 @@ function getColumnDesc(unit, lesson, sublesson, toc, type) {
         _desc = toc[unit].children[lesson].desc;
         _notAddColon = toc[unit].children[lesson].notAddColon;
         _displayOrder = toc[unit].children[lesson].displayOrder * 1;
+        _navigationId = toc[unit].children[lesson].navigationId;
       }
     }
   }
@@ -1400,12 +1414,13 @@ function getColumnDesc(unit, lesson, sublesson, toc, type) {
           _desc = toc[unit].children[lesson].children[sublesson].desc;
           _notAddColon = toc[unit].children[lesson].children[sublesson].notAddColon;
           _displayOrder = toc[unit].children[lesson].children[sublesson].displayOrder * 1;
+          _navigationId = toc[unit].children[lesson].children[sublesson].navigationId;
         }
       }
     }
   }
   _colonStr = _notAddColon == "false" ? ":" : "";
-  return {desc:_desc,notAddColon:_notAddColon,colonStr:_colonStr,displayOrder:_displayOrder};
+  return {desc:_desc,notAddColon:_notAddColon,colonStr:_colonStr,displayOrder:_displayOrder,navigationId:_navigationId};
 }
 
 function getLessonObj(currentProductAssignments, _problemObj) {
@@ -1755,6 +1770,7 @@ function createProblemTOC(workbook) {
         "Version", 
         "Display Order",
         "Not Add Colon",
+        "Navigation ID",
     ];
     let sheetColumnsObj = getColumnName(sheetColumns,_tocData);
     _console("_productResources = ",_productResources);
@@ -1769,6 +1785,7 @@ function createProblemTOC(workbook) {
             let _e = readColumnData("Version",rowNum,_tocData,sheetColumnsObj);
             let _f = readColumnData("Not Add Colon",rowNum,_tocData,sheetColumnsObj);
             let _g = readColumnData("Display Order",rowNum,_tocData,sheetColumnsObj);
+            let _h = readColumnData("Navigation ID",rowNum,_tocData,sheetColumnsObj);
             if(_e)
             {
                 _e = _e.replace(/ /g,''); // remove spaces from string
@@ -1812,6 +1829,9 @@ function createProblemTOC(workbook) {
                             if (_g) {
                                 _toc[_a].children[_b].displayOrder = _g;
                             }
+                            if (_h) {
+                                _toc[_a].children[_b].navigationId = _h;
+                            }
                            // console.log("_a = ",_a," :: _b = ",_b);
                             if(_productResources[_a] && _productResources[_a][_b])
                             {
@@ -1838,6 +1858,10 @@ function createProblemTOC(workbook) {
                                 }
                                 if (_g) {
                                     _toc[_a].children[_b].children[_c].displayOrder = _g;
+                                }
+
+                                if (_h) {
+                                    _toc[_a].children[_b].children[_c].navigationId = _h;
                                 }
                                 // Here this condition _b, _c is used. Bcoz in product resources node / lesson column may contain units or chapters. So _productResources object may contain units or chapters
                                 //console.log("_b = ",_b," :: _c = ",_c);
@@ -1868,7 +1892,10 @@ function createProblemTOC(workbook) {
                     }
                     if (_g && _toc[_a].children["EMPTY"]) {
                         _toc[_a].children["EMPTY"].displayOrder = _g;
-                }
+                     }
+                     if (_h && _toc[_a].children["EMPTY"]) {
+                        _toc[_a].children["EMPTY"].navigationId = _h;
+                     }
                 }
             } // END OF A
         }
@@ -2039,17 +2066,17 @@ function rearrangeChapters(_obj, programTOC, _toc) {
             lessonObj.menuText = chapters[j].menuText;
             lessonObj.questions = [];
             lessonObj.sublessons = [];
-           //console.log(j," :: ",chapters[j]);
-            if (chapters[j].contents[0].sublessons.length == 1) {
-              lessonObj.questions =
-                chapters[j].contents[0].sublessons[0].questions;
-             if(chapters[j].contents[0].sublessons[0].gradingObject)
-                {
-                    lessonObj.gradingObject = chapters[j].contents[0].sublessons[0].gradingObject;
-                }
-            } else {
-              lessonObj.sublessons = chapters[j].contents[0].sublessons;
+            if (chapters[j].navID) {
+                lessonObj.navID = chapters[j].navID;
             }
+              if (chapters[j].contents[0].sublessons.length == 1) {
+                  lessonObj.questions = chapters[j].contents[0].sublessons[0].questions;
+                  if (chapters[j].contents[0].sublessons[0].gradingObject) {
+                      lessonObj.gradingObject = chapters[j].contents[0].sublessons[0].gradingObject;
+                  }
+              } else {
+                  lessonObj.sublessons = chapters[j].contents[0].sublessons;
+              }
             _units[i].contents.push(lessonObj);
 
             delete chapters[j];
