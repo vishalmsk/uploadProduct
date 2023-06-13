@@ -158,13 +158,14 @@ export function uploadImportSpreadsheet(data) {
       }
       //
       // console.log("automationObjects = ", automationObjects);
-      let enableErrorCheck = true; // make it false to skip error check
+      // enableErrorCheck made false is commented as per jesse. Sheet will be uploaded even if it contains errors.
+      let enableErrorCheck = false; // make it false to skip error check
       if (enableErrorCheck && automationObjects.jsonErrors.length > 0) {
         let _response = {
             jsonErrors: automationObjects.jsonErrors,
               spreadsheetErrors
           };
-          resolve(_response);
+          resolve(_response); 
           return;
       }
       //return; // enable it while debugging JSON
@@ -3074,7 +3075,7 @@ async function createJSON(data) {
                   //jsonErrors.push("<div class='alert alert-danger' role='alert'> " + elm.msg + "</div>");
                   jsonErrors.push(elm.msg);
               });
-              jsonErrors.push("Data not uploaded. Please correct JSON errors.");
+              //jsonErrors.push("Data not uploaded. Please correct JSON errors.");
           }
           //===================================================================
           _console("resoursesUnitWiseData", resoursesUnitWiseData);
