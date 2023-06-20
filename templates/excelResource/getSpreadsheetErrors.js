@@ -190,7 +190,7 @@ function checkVersionColumnValue(versionNotFound,tocVersionNotFound)
         _array.push({ desc: "Version column values are not found in some rows of Program TOC tab. Please check the following lessons - <br> <span style='color:red'>" + lessonString + "</span>", errorsFound: true });
     }
     else {
-        _array.push({ desc: "Version column values are found in all the rows of Product Resources Tab. ", errorsFound: false });
+        _array.push({ desc: "Version column values are found in all the rows of Program TOC tab. ", errorsFound: false });
     }
     return _array;
 }
