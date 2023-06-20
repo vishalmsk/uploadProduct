@@ -44,6 +44,7 @@ export function getSpreadsheetErrors(workbook) {
     //======================================================
     let _resourceCategoryArr = [];
     let versionNotFound = [];
+    let tocVersionNotFound = [];
     let _nodeSublessonErrors = [];
     let _formatColumnErrors = [];
     
@@ -69,6 +70,12 @@ export function getSpreadsheetErrors(workbook) {
     });
 
     //========================================
+    _programToc.forEach((elm,index)=>{
+        if (!checkSheetValue(elm.Version)) {
+            tocVersionNotFound.push(elm["Unit (Parent)"]+" : "+elm["Lesson (Child)"]+" ("+elm["NavMenuId"]+")");
+        }
+    });
+    //========================================
     //console.log("_programToc");
     let _programTocVersion = false;
      if(_programToc[0].Version || _programToc[1].Version)
@@ -93,7 +100,7 @@ export function getSpreadsheetErrors(workbook) {
     errorList = [...errorList,...checkFormatColumn(_formatColumnErrors)];
     errorList = [...errorList,...checkResourceCategory(_resourceCategoryArr,_programCategories)];
     errorList = [...errorList,...checkVersionColumn(_productResourceVersion,_programTocVersion)];
-    errorList = [...errorList,...checkVersionColumnValue(versionNotFound)];
+    errorList = [...errorList,...checkVersionColumnValue(versionNotFound,tocVersionNotFound)];
     errorList = [...errorList,...checkNodeSublessonErrors(_nodeSublessonErrors)];
    //===============================
     return errorList;
@@ -164,11 +171,23 @@ function checkVersionColumn(_productResourceVersion,_programTocVersion)
     return _array;
 }
 
-function checkVersionColumnValue(versionNotFound)
+function checkVersionColumnValue(versionNotFound,tocVersionNotFound)
 {
     let _array = [];
     if (versionNotFound.length > 0) {
         _array.push({ desc: "Version column values are not found in some rows of Product Resources tab. Please check the following resource code in Product Resources tab - <br> <span style='color:red'>" + versionNotFound + "</span>", errorsFound: true });
+    }
+    else {
+        _array.push({ desc: "Version column values are found in all the rows of Product Resources Tab. ", errorsFound: false });
+    }
+    //--------------------------------------------
+    if (tocVersionNotFound.length > 0) {
+        let lessonString = "";
+        tocVersionNotFound.forEach((elm,index)=>{
+            lessonString += elm+"<br>";
+        });
+
+        _array.push({ desc: "Version column values are not found in some rows of Program TOC tab. Please check the following lessons - <br> <span style='color:red'>" + lessonString + "</span>", errorsFound: true });
     }
     else {
         _array.push({ desc: "Version column values are found in all the rows of Product Resources Tab. ", errorsFound: false });
