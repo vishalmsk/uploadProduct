@@ -169,6 +169,13 @@ export function getProductStructureJson(data) {
         mergeSingleSublesson(_jsonObj);
         //=========== ADD Product Resources Sheet data ========
         addProductResourcesSheetData(_jsonObj,_toc);
+        //================ Correct Units having empty lessons ================
+        // As mentioned in the ticketes, 
+        //https://perfectionlearning.sifterapp.com/issues/16813#comment_17454660
+        //https://perfectionlearning.sifterapp.com/issues/16813#comment_17454500
+        // This function will identify units having empty lesson and will rearrange it properly in the json.
+        correctUnitsHavingEmptyLessons(_jsonObj);
+        //===============================================
         //============ SPLIT JSON AS PER PRODUCT VERSIONS =============
         let productJsonArr = createProductJsonVersions(_jsonObj,productVersionObj);
         //============================================================
@@ -219,6 +226,33 @@ export function getProductStructureJson(data) {
         });
 }
 
+function correctUnitsHavingEmptyLessons(_jsonObj)
+{
+    // As mentioned in the ticketes, 
+    //https://perfectionlearning.sifterapp.com/issues/16813#comment_17454660
+    //https://perfectionlearning.sifterapp.com/issues/16813#comment_17454500
+    // This function will identify units having empty lesson and will rearrange it properly in the json.
+    let emptyUnits = [];
+   if(_jsonObj.containers)
+   {
+    _jsonObj.containers.forEach((elm)=>{
+        if(elm.contents.length == 1 && (elm.contents[0].menuText == elm.menuText))
+        {
+            emptyUnits.push(elm.contents[0]);
+        } 
+    });
+   
+    _jsonObj.containers = _jsonObj.containers.filter((elm)=>{
+        return (elm.contents.length == 1 && elm.containers.length == 0 ) ? false : true;
+    });
+    
+    //--------------------------
+   }
+   if(emptyUnits.length > 0)
+   {
+    _jsonObj.contents = [..._jsonObj.contents,...emptyUnits]
+   }
+}
 
 function getProblemListPromise(_searchVal,applicationType) {
     //console.log("getProblemListPromise");
@@ -1796,6 +1830,26 @@ function createProblemTOC(workbook) {
             //_b =  _b.replace(/,/g, "^"); 
 
             //=================================================
+            // This is done to fix the issue of EMPTY lesson as explain in tickete 16813. If resource data is present for unit and lesson in product resource tab, then unit name will be given to lesson.
+            //https://perfectionlearning.sifterapp.com/issues/16813#comment_17454500
+            //https://perfectionlearning.sifterapp.com/issues/16813#comment_17454660
+            if(_productResources[_a] && _productResources[_a][_a])
+            {
+                // if lesson value is EMPTY in TOC then Unit is content item in nav menu. lesson name same as unit name
+                _b = _a;
+            }
+            //=================================================
+            /*
+            console.log("_a = ",_a);
+            console.log("_b = ",_b);
+            console.log("_c = ",_c);
+            console.log("_d = ",_d);
+            console.log("_e = ",_e);
+            console.log("_f = ",_f);
+            console.log("_g = ",_g);
+            console.log("_h = ",_h);
+            console.log("====================");
+            */
             if (_a) {
                 if (!programTOC[_a]) {
                     programTOC[_a] = [];
@@ -2077,8 +2131,8 @@ function rearrangeChapters(_obj, programTOC, _toc) {
               } else {
                   lessonObj.sublessons = chapters[j].contents[0].sublessons;
               }
-            _units[i].contents.push(lessonObj);
-
+              _units[i].contents.push(lessonObj);
+            
             delete chapters[j];
           }
         }
@@ -2125,7 +2179,7 @@ function mapChaptersWithSpreadsheet(chapters, programTOC, _unitName,_toc) {
     for (var i = 0; i < chapters.length; i++) {
         let chapterText = getChapterMenuText(chapters[i].menuText,_toc);
          let isFound = programTOC.filter(elm => elm === chapterText);
-       // console.log("chapterText = ",chapterText," :: isFound = ",isFound);
+        // console.log("chapterText = ",chapterText," :: isFound = ",isFound);
         let isSimilarFound;
         if (isFound.length == 0) {
             isSimilarFound = programTOC.filter(function (elm) {
