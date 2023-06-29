@@ -158,7 +158,7 @@ export function getProductStructureJson(data) {
         //========== ADD PRODUCT INFO ==================
         AddProductInfo(_jsonObj, programSheet);
         //========== FILTER DATA AS PER EXCEL ==================
-       
+        
         filterDataAsPerExcel(_jsonObj, programTOC, product_resources,_toc,errorList);
         
         //================ ADD DUMMY FEEDBACK DATA TO THE PROBLEMS ===========
@@ -235,17 +235,33 @@ function correctUnitsHavingEmptyLessons(_jsonObj)
     let emptyUnits = [];
    if(_jsonObj.containers)
    {
-    _jsonObj.containers.forEach((elm)=>{
-        if(elm.contents.length == 1 && (elm.contents[0].menuText == elm.menuText))
+    _jsonObj.containers.forEach((elm,index)=>{
+        if(elm)
         {
-            emptyUnits.push(elm.contents[0]);
-        } 
+            if(elm.contents && elm.contents.length == 1)
+            {
+                if(elm.contents[0].menuText == elm.menuText)
+                {
+                    emptyUnits.push(elm.contents[0]);
+                } 
+            }
+            if((elm.contents && elm.contents.length == 0) && ((elm.containers && elm.containers.length == 1)))
+            {
+                if(elm.containers[0].contents && elm.containers[0].contents.length == 1)
+                {
+                    emptyUnits.push(elm.contents[0]);
+                }
+            } 
+        }
     });
-   
+
     _jsonObj.containers = _jsonObj.containers.filter((elm)=>{
-        return (elm.contents.length == 1 && elm.containers.length == 0 ) ? false : true;
+        if(elm && elm.contents)
+        {
+            return (elm.contents.length == 1 && elm.containers.length == 0 ) ? false : true;
+        }
     });
-    
+
     //--------------------------
    }
    if(emptyUnits.length > 0)
@@ -990,7 +1006,8 @@ function createRawProductStructure(unitstructure, _lessons, currentProductAssign
             return ele.lessons.length > 0 ? ele.lessons[0].lessonId === _unitID : false;
         });
         if (assignments.length > 0) {
-            _unitObj._assignments = assignments;
+            // Assessments object data are commented. As all data availbale in assignments
+           // _unitObj._assignments = assignments;
         }
         //========================
         _productStructure.push(_unitObj);
@@ -2110,7 +2127,7 @@ function rearrangeChapters(_obj, programTOC, _toc) {
           let lessonChildLength = _.size(
             _toc[_unitName].children[chapterMenuText].children
           );
-
+           
           let mergeSublesson;
 
           if (lessonChildLength == 0) mergeSublesson = true;
@@ -2148,6 +2165,12 @@ function rearrangeChapters(_obj, programTOC, _toc) {
           lessonObj.menuText = chapters[j].menuText;
           lessonObj.questions = [];
           lessonObj.sublessons = [];
+          if (chapters[j].navID) {
+            lessonObj.navID = chapters[j].navID;
+        }
+        if (chapters[j].displayOrder) {
+            lessonObj.displayOrder = chapters[j].displayOrder;
+        }
             _units[i].contents.push(lessonObj);
 
           delete chapters[j];
@@ -2262,7 +2285,7 @@ function addMissingChaptersAssessmentData(obj, resoursesUnitWiseDataForAutomatio
                         missingChapters.push(_automationChapters[k]);
                     }
                 }
-               // console.log("missingChapters = ",missingChapters);
+                // console.log("missingChapters = ",missingChapters);
                 //================== Sort missing chapters as container and contents ==========
                 //
                 if(_assignments)
