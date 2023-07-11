@@ -77,6 +77,7 @@ import {
   } from './httpAxioRequest.js';
   
 import * as XLSX from 'xlsx';
+import { addPacingInformationInsideInteractiveResources } from './excelResourceUtils.js';
 export function uploadImportSpreadsheet(data) {
   _console("uploadImportSpreadsheet");
   //============= CODE FOR PROCESSING ================
@@ -2889,6 +2890,7 @@ async function createJSON(data) {
               });
           }
           resoursesUnitWiseData = updateLocationInfoInNonInteractiveResources(resoursesUnitWiseData);
+          resoursesUnitWiseData = addPacingInformationInsideInteractiveResources(resoursesUnitWiseData, cloneDeep(currentProductAssignments));
           // Start For "Automatically generate files needed for automation during import process"
           let resoursesUnitWiseDataNew = _.cloneDeep(resoursesUnitWiseData);
           let NewresoursesUnitWiseData = {
@@ -3113,6 +3115,11 @@ async function createJSON(data) {
           }
       }
       // console.log("productStructureJson = ", productStructureJson);
+      //==========================
+      updateResoursesUnitWiseData(resoursesUnitWiseData);
+      //======= dummy code for testing toc ===========
+      updateTOCdata(toc,resoursesUnitWiseData,resources);
+      //===========================
       resolve({
           automation_data_to_save,
           resoursesUnitWiseData,
@@ -3126,6 +3133,75 @@ async function createJSON(data) {
           jsonErrors
       });
   });
+}
+
+function updateResoursesUnitWiseData(resoursesUnitWiseData) {
+  // This function will update resource code in toc data
+  // We can use this function to update other properties in TOC data
+  // changes done for tickete 16913
+  let propertiesToSkip = ["location", "toc", "EMPTY"];
+  for (var i in resoursesUnitWiseData) {
+    //console.log("i ======= ",i);
+    let _unitObj = resoursesUnitWiseData[i];
+    for (var j in _unitObj) {
+      if (propertiesToSkip.indexOf(j) == -1) {
+        let _chapterObj = _unitObj[j];
+        //console.log(j," :: ",_chapterObj);
+        if (_chapterObj.resources && _chapterObj.toc) {
+          updateResourceData(_chapterObj);
+        }
+        else {
+          for (var k in _chapterObj) {
+            if (propertiesToSkip.indexOf(k) == -1) {
+              //console.log(k," :: ",_chapterObj[k]);
+              if (_chapterObj[k].resources && _chapterObj[k].toc) {
+                updateResourceData(_chapterObj[k]);
+              }
+            }
+          }
+        }
+      }
+    }
+    //console.log("===================");
+  }
+}
+
+function updateTOCdata(toc, resoursesUnitWiseData, resources) {
+  // changes done for tickete 16913
+  // this function will update missing resource code and student visibility property in toc array
+  toc.forEach((elm, index) => {
+    if (elm["Resource Code"] === undefined) {
+      let _unit = elm["Unit (Parent)"];
+      let resourceArr = resources.filter((innerElm) => {
+        let _node = innerElm["Node / Lesson"];
+        let _lesson = innerElm["Lesson / Sub-Lesson"];
+        let _format = innerElm["Format"];
+        return (_node == _unit) && (_lesson == _unit) && (_format == "Interactive Lesson") ? true : false;
+      });
+      //console.log(index," :: resourceArr = ",resourceArr);
+      if (resourceArr && resourceArr.length == 1) {
+        //console.log(index, elm["Unit (Parent)"], elm["Lesson (Child)"], "UPDATED");
+        //console.log("resourceArr = ",resourceArr);
+        if (resourceArr[0]["Resource Code"]) {
+          elm["Resource Code"] = resourceArr[0]["Resource Code"];
+        }
+        if (resourceArr[0]["Visible Student"]) {
+          elm["student Visibility"] = resourceArr[0]["Visible Student"];
+        }
+      }
+    }
+  });
+}
+
+function updateResourceData(_chapterObj) {
+  if ((_chapterObj.resources && _chapterObj.resources.length > 0) && (_chapterObj.toc && _chapterObj.toc.length > 0)) {
+    let resourceObj = _chapterObj.resources.filter((elm) => {
+      return elm.Format == "Interactive Lesson" ? true : false;
+    });
+    if (resourceObj.length > 0) {
+      _chapterObj.toc[0]["Resource Code"] = resourceObj[0]["Resource Code"];
+    }
+  }
 }
 
 function getUserContentObjectsForCurrentProduct(data) {
