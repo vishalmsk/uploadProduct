@@ -79,6 +79,7 @@ import {
 import {
     getHttpRequest
   } from '../excelResource/httpAxioRequest.js';
+  import * as XLSX from 'xlsx';
 export function getProductStructureJson(data) {
    // console.log("getProductStructureJson");
     _console("getProductStructureJson", 55);
@@ -105,6 +106,7 @@ export function getProductStructureJson(data) {
         _console("FROM CHARLES 555 ========= ");
         _console("Problem Editor Product Code = ", currentProductId);
         _console("Spreadsheet Product Code = ", spreadSheetProductCode);
+        let productInfo = XLSX.utils.sheet_to_json(workbook.Sheets["Product"]);
         if (currentProductId != spreadSheetProductCode) {
             //_console("%c SpreadSheet mismatch. Product code of uploaded spreadsheet is different from selected product code. Please upload correct spreadsheet.", 'background: #ffff00; color: #000');
             //console.warn("Server Product code = "+currentProductId+" , Spreadsheet Product code = "+spreadSheetProductCode);
@@ -156,7 +158,7 @@ export function getProductStructureJson(data) {
         //========== ADD MISSING LESSONS FROM ASSESSMENT ==================
         addMissingLessonsAssessmentData(_jsonObj, currentProductAssignments, _problemObj);
         //========== ADD PRODUCT INFO ==================
-        AddProductInfo(_jsonObj, programSheet);
+        AddProductInfo(_jsonObj, programSheet, productInfo);
         //========== FILTER DATA AS PER EXCEL ==================
         
         filterDataAsPerExcel(_jsonObj, programTOC, product_resources,_toc,errorList);
@@ -1082,6 +1084,10 @@ function createProductStructureJson(_productStructure, _problemInfo, currentProd
         {
             _unitObj.navID = unitDescObj.navigationId ;
         }
+        if(unitDescObj.headerData)
+        {
+            _unitObj.headerData = unitDescObj.headerData ;
+        }
         _unitObj.containers = [];
         _unitObj.contents = [];
         //console.log("_unitObj.menuText = ",_unitObj.menuText);
@@ -1136,6 +1142,10 @@ function createProductStructureJson(_productStructure, _problemInfo, currentProd
             if(chapterDescObj.navigationId)
             {
                 _chapterObj.navID = chapterDescObj.navigationId ;
+            }
+            if(chapterDescObj.headerData)
+            {
+                _chapterObj.headerData = chapterDescObj.headerData ;
             }
             _chapterObj.containers = []; 
             _chapterObj.contents = [];
@@ -1206,6 +1216,10 @@ function createProductStructureJson(_productStructure, _problemInfo, currentProd
                 if(lessonDescObj.navigationId)
                 {
                     _lessonObj.navID = lessonDescObj.navigationId ;
+                }
+                if(lessonDescObj.headerData)
+                {
+                    _lessonObj.headerData = lessonDescObj.headerData ;
                 }
                 _lessonObj.questions = [];
                 _lessonObj.sublessons = [];
@@ -1435,6 +1449,7 @@ function getColumnDesc(unit, lesson, sublesson, toc, type) {
   let _colonStr;
   let _displayOrder;
   let _navigationId;
+  let headerData;
 
   if (type == "unit") {
     if (toc[unit]) {
@@ -1443,6 +1458,7 @@ function getColumnDesc(unit, lesson, sublesson, toc, type) {
         _notAddColon = toc[unit].children["EMPTY"].notAddColon;
         _displayOrder = toc[unit].children["EMPTY"].displayOrder * 1;
         _navigationId = toc[unit].children["EMPTY"].navigationId;
+        headerData = toc[unit].children["EMPTY"].headerData;
       }
     }
   }
@@ -1454,6 +1470,7 @@ function getColumnDesc(unit, lesson, sublesson, toc, type) {
         _notAddColon = toc[unit].children[lesson].notAddColon;
         _displayOrder = toc[unit].children[lesson].displayOrder * 1;
         _navigationId = toc[unit].children[lesson].navigationId;
+        headerData = toc[unit].children[lesson].headerData;
       }
     }
   }
@@ -1466,12 +1483,13 @@ function getColumnDesc(unit, lesson, sublesson, toc, type) {
           _notAddColon = toc[unit].children[lesson].children[sublesson].notAddColon;
           _displayOrder = toc[unit].children[lesson].children[sublesson].displayOrder * 1;
           _navigationId = toc[unit].children[lesson].children[sublesson].navigationId;
+          headerData = toc[unit].children[lesson].children[sublesson].headerData;
         }
       }
     }
   }
   _colonStr = _notAddColon == "false" ? ":" : "";
-  return {desc:_desc,notAddColon:_notAddColon,colonStr:_colonStr,displayOrder:_displayOrder,navigationId:_navigationId};
+    return { desc: _desc, notAddColon: _notAddColon, colonStr: _colonStr, displayOrder: _displayOrder, navigationId: _navigationId,headerData };
 }
 
 function getLessonObj(currentProductAssignments, _problemObj) {
@@ -1903,7 +1921,12 @@ function createProblemTOC(workbook) {
                             if (_h) {
                                 _toc[_a].children[_b].navigationId = _h;
                             }
+                            //=============== Header data of TOC SIFTER 17028
+                            _toc[_a].children[_b].headerData = getTocHeaderData(_a,_b,_c,_d);
+                            // unit, lesson, sublesson , desc
+                            //============================================
                            // console.log("_a = ",_a," :: _b = ",_b);
+                           
                             if(_productResources[_a] && _productResources[_a][_b])
                             {
                                 _toc[_a].children[_b] = {..._toc[_a].children[_b],..._productResources[_a][_b]}
@@ -1934,6 +1957,9 @@ function createProblemTOC(workbook) {
                                 if (_h) {
                                     _toc[_a].children[_b].children[_c].navigationId = _h;
                                 }
+                                //=============== Header data of TOC SIFTER 17028 
+                                _toc[_a].children[_b].children[_c].headerData = getTocHeaderData(_a,_b,_c,_d);
+                                //=============================================
                                 // Here this condition _b, _c is used. Bcoz in product resources node / lesson column may contain units or chapters. So _productResources object may contain units or chapters
                                 //console.log("_b = ",_b," :: _c = ",_c);
                                 if(_productResources[_b] && _productResources[_b][_c])
@@ -1967,7 +1993,11 @@ function createProblemTOC(workbook) {
                      if (_h && _toc[_a].children["EMPTY"]) {
                         _toc[_a].children["EMPTY"].navigationId = _h;
                      }
+                      //=============== Header data of TOC SIFTER 17028 
+                      _toc[_a].children["EMPTY"].headerData = getTocHeaderData(_a,_b,_c,_d);;
                 }
+                //=========== Header data of TOC SIFTER 17028 ==================
+
             } // END OF A
         }
     }
@@ -1976,6 +2006,21 @@ function createProblemTOC(workbook) {
         programTOC,
         _toc
     };
+}
+
+function getTocHeaderData(_a,_b,_c,_d)
+{
+    //console.log("getTocHeaderData");
+    //console.log(_a,_b,_c,_d);
+    let _arr = [];
+    let _unitVal = _a; 
+    let _lessonVal = (_a == _b) || (_b == "EMPTY") || !_b ? "": _b; 
+    let _subLessonVal = _c ? _c : "";
+    let _descVal = _d ? _d : "";
+    //================
+    _arr = [_unitVal,_lessonVal,_subLessonVal,_descVal];
+    //console.log("_arr = ",_arr);
+    return _arr;
 }
 
 function getLessonTitlesFromSheet(workbook) {
@@ -2140,6 +2185,9 @@ function rearrangeChapters(_obj, programTOC, _toc) {
             if (chapters[j].navID) {
                 lessonObj.navID = chapters[j].navID;
             }
+            if (chapters[j].headerData) {
+                lessonObj.headerData = chapters[j].headerData;
+            }
               if (chapters[j].contents[0].sublessons.length == 1) {
                   lessonObj.questions = chapters[j].contents[0].sublessons[0].questions;
                   if (chapters[j].contents[0].sublessons[0].gradingObject) {
@@ -2167,6 +2215,9 @@ function rearrangeChapters(_obj, programTOC, _toc) {
           lessonObj.sublessons = [];
           if (chapters[j].navID) {
             lessonObj.navID = chapters[j].navID;
+        }
+        if (chapters[j].headerData) {
+            lessonObj.headerData = chapters[j].headerData;
         }
         if (chapters[j].displayOrder) {
             lessonObj.displayOrder = chapters[j].displayOrder;
@@ -2487,7 +2538,7 @@ function rearrangesublessons(arr) {
     return sortedArr;
 }
 
-function AddProductInfo(_obj, programSheet) {
+function AddProductInfo(_obj, programSheet, productInfo) {
     _console("AddProductInfo");
     //===========================
     let version;
@@ -2510,6 +2561,10 @@ function AddProductInfo(_obj, programSheet) {
     }
     _obj.product.version = version;
     _obj.product.series = program_graphic;
+    if(productInfo && productInfo[0] && productInfo[0].Allow_Full_Access)
+    {
+        _obj.product.allowFullAccess = productInfo[0].Allow_Full_Access;
+    }
 }
 
 function mergeSingleSublesson(_obj) {
