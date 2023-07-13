@@ -1,23 +1,3 @@
-/*
-import {
-    forEach,
-    map,
-    flatten,
-    uniq,
-    hasIn,
-    cloneDeep,
-    capitalize,
-    find,
-    filter,
-    sortBy,
-    isObject,
-    isString,
-    keys,
-    indexOf,
-    isArray,
-    compact
-} from "lodash";
-*/
 import _ from 'lodash';
 const { forEach,
     map,
@@ -27,50 +7,23 @@ const { forEach,
     cloneDeep,
     capitalize,
     find,
-    filter,
-    sortBy,
-    isObject,
     isString,
     keys,
-    indexOf,
     isArray,
     compact } = _;
-/*
-import {
-    getProblemListPromise
-} from "../../redux/actions/assignmentAction";
-*/
-/*
-import {
-    getTagsPromise
-} from "../../utils/Promises";
-*/
-/*
-import {
-    getSortedAssignmentsSubLessonIndex
-} from "../../utils/Helper";
-*/
+
 import {
     ID_COLUMN_NAME,
     INDEX_COLUMN_NAME,
     NAME_COLUMN_NAME,
     TYPE_COLUMN_NAME,
-    COLUMN_SEQUENCE_TO_SORT_PRODUCT_STRUCTURE,
-    COLUMN_SEQUENCE_FOR_UNIQUE_KEY,
-    UNIQUE_KEY_COLUMN_NAME,
     PROBLEM_QUESTION_TEXT_COLUMN_NAME,
     ASSESSMENT_TYPE_TEXT,
     ASSESSMENT_SUBTYPE_TEXT,
     SUBTYPE_COLUMN_NAME,
     TEMPLATE_TYPE_1_COLUMN_NAME,
     TEMPLATE_TYPE_2_COLUMN_NAME,
-    DYNAMIC_COLUMN_NAMES_FOR_PRODUCT_STRUCTURE,
-    DYNAMIC_OBJECT_KEY_VALUES,
-    COLUMN_SEQUENCE_FOR_PRODUCT_STRUCTURE,
-    ASSESSMENT_TYPE_COLUMN_NAME,
-    ASSESSMENT_SUBTYPE_COLUMN_NAME,
     SKILLS_COLUMN_NAME,
-    TEMPLATE_TYPE_DOCUMENT_SELECTOR,
     PROBLEM_ANSWER_TEXT_COLUMN_NAME,
     SCORE_COLUMN_NAME,
     ANSWER_WISE_INFO_NEEDED_FIELD,
@@ -78,28 +31,35 @@ import {
 } from "../../utils/Constants.js";
 import {
     getHttpRequest
-  } from '../excelResource/httpAxioRequest.js';
-  import * as XLSX from 'xlsx';
+} from '../excelResource/httpAxioRequest.js';
+import * as XLSX from 'xlsx';
+
+/*
+##########################################################################
+Important Points while updating this file: 
+** Please do not add any external module in this File. 
+** This file is used in external Node application as mentioend in the tickete Sifter 16450
+** Addition of external modules will create issues in node application.
+** If you want to write any function, please add function in the same file.
+** Please do not use console.log, use function _console and make enableConsole variable false after work is complete., Because console data output by this function is read and processed in node appliction. Unwanted console output will create problem in node processing.
+##########################################################################
+*/
+//===================== Global variables ==============================
+var enableConsole = false; // please make it true to enable console
+//===============================================================
 export function getProductStructureJson(data) {
-   // console.log("getProductStructureJson");
-    _console("getProductStructureJson", 55);
+    _console("getProductStructureJson");
     return new Promise(async function (resolve, reject) {
-       // showLoader();
         const {
             currentProductAssignments,
             unitstructure,
-            addProblemDataInSheet,
             currentProductId,
             toc,
             workbook,
             resoursesUnitWiseDataForAutomation,
             applicationType
         } = data;
-        const {
-            units,
-            chapters,
-            lessons
-        } = unitstructure;
+
         let programSheet = workbook.Sheets.Product;
         let spreadSheetProductCode = getSpreadSheetProductCode(programSheet);
         let errorList = [];
@@ -108,31 +68,30 @@ export function getProductStructureJson(data) {
         _console("Spreadsheet Product Code = ", spreadSheetProductCode);
         let productInfo = XLSX.utils.sheet_to_json(workbook.Sheets["Product"]);
         if (currentProductId != spreadSheetProductCode) {
-            //_console("%c SpreadSheet mismatch. Product code of uploaded spreadsheet is different from selected product code. Please upload correct spreadsheet.", 'background: #ffff00; color: #000');
+            _console("%c SpreadSheet mismatch. Product code of uploaded spreadsheet is different from selected product code. Please upload correct spreadsheet.", 'background: #ffff00; color: #000');
             //console.warn("Server Product code = "+currentProductId+" , Spreadsheet Product code = "+spreadSheetProductCode);
-           // console.warn("Product code of uploaded spreadsheet is different from product code fetched from the server.");
+            // console.warn("Product code of uploaded spreadsheet is different from product code fetched from the server.");
             // return false;
         }
         _console("currentProductAssignments = ", currentProductAssignments);
         _console("unitstructure = ", unitstructure);
-        //console.log("applicationType = ", applicationType);
-        let problemLevelObjectAndProblemData = await getAllAssignmentProblems(currentProductAssignments, true,applicationType);
+        _console("applicationType = ", applicationType);
+        let problemLevelObjectAndProblemData = await getAllAssignmentProblems(currentProductAssignments, true, applicationType);
         let product_resources = workbook.Sheets["Product Resources"];
         _console("problemLevelObjectAndProblemData = ", problemLevelObjectAndProblemData);
         _console("toc = ", toc);
         _console("workbook = ", workbook);
-        _console("programSheet = ", programSheet);
         _console("resoursesUnitWiseDataForAutomation = ", resoursesUnitWiseDataForAutomation);
         //==================== READ PRODUCT VERSIONS FROM SHEET ==============
         let productVersionObj = getProductVersions(workbook);
         _console("productVersionObj = ", productVersionObj);
         //==================== CREATE PROBLEM TOC FROM UPLOADED SPREADSHEET / EXCEL 
-        let {programTOC,_toc} = createProblemTOC(workbook)
+        let { programTOC, _toc } = createProblemTOC(workbook)
         let lessonTitles = getLessonTitlesFromSheet(workbook)
         _console("lessonTitles = ", lessonTitles);
         _console("programTOC = ", programTOC);
         _console("_toc = ", _toc);
-       // _console("programTOCobj = ", programTOCobj);
+        // _console("programTOCobj = ", programTOCobj);
         //============ CREATE PROBLEM OBJECT ============
         let _problemObj = getProblemData(problemLevelObjectAndProblemData);
         //================= CREATE LESSON OBJECT CONTAINING PROBLEM DATA ======
@@ -149,9 +108,9 @@ export function getProductStructureJson(data) {
         //===================================
         // Above is raw product structure is created based on data of ProblemEditor
         //Below is step by step product structure json is created as per requirement.
-        let _jsonObj = createProductStructureJson(_productStructure, _problemObj, currentProductId, _toc, lessonTitles,errorList);
+        let _jsonObj = createProductStructureJson(_productStructure, _problemObj, currentProductId, _toc, lessonTitles, errorList);
         _console("_jsonObj = ", _jsonObj);
-        rearrangeChapters(_jsonObj, programTOC,_toc);
+        rearrangeChapters(_jsonObj, programTOC, _toc);
         //========== FOR ELA GRADE 9 PRODUCTS ==================
         //========== ADD MISSING CHAPTERS FROM ASSESSMENT ==================
         addMissingChaptersAssessmentData(_jsonObj, resoursesUnitWiseDataForAutomation, _productStructure, _problemObj); // FOR ELA GRADE 9 LESSONS
@@ -160,17 +119,15 @@ export function getProductStructureJson(data) {
         //========== ADD PRODUCT INFO ==================
         AddProductInfo(_jsonObj, programSheet, productInfo);
         //========== FILTER DATA AS PER EXCEL ==================
-        
-        filterDataAsPerExcel(_jsonObj, programTOC, product_resources,_toc,errorList);
-        
+        filterDataAsPerExcel(_jsonObj, programTOC, product_resources, _toc, errorList);
         //================ ADD DUMMY FEEDBACK DATA TO THE PROBLEMS ===========
-       addDummyFeedbackData(_jsonObj);
+        addDummyFeedbackData(_jsonObj);
         //=========================
         // Here there are some lesson instances in which only single sublesson is present.
         // So in this cases, we dont have to show the sublesson array. Just copy question data and give it to parent lesson and remove sublesson array.
         mergeSingleSublesson(_jsonObj);
         //=========== ADD Product Resources Sheet data ========
-        addProductResourcesSheetData(_jsonObj,_toc);
+        addProductResourcesSheetData(_jsonObj, _toc);
         //================ Correct Units having empty lessons ================
         // As mentioned in the ticketes, 
         //https://perfectionlearning.sifterapp.com/issues/16813#comment_17454660
@@ -179,126 +136,102 @@ export function getProductStructureJson(data) {
         correctUnitsHavingEmptyLessons(_jsonObj);
         //===============================================
         //============ SPLIT JSON AS PER PRODUCT VERSIONS =============
-        let productJsonArr = createProductJsonVersions(_jsonObj,productVersionObj);
+        let productJsonArr = createProductJsonVersions(_jsonObj, productVersionObj);
         //============================================================
-         // Old JSON structure is converted to new JSON structure as mentioned in this ticket Sifter 15569
-         
-         // commented on 21/3/20233. Changes for Sifter 15569 not tested
-         let _oldJsonArr = JSON.parse(JSON.stringify(productJsonArr)); 
-         let _newJsonArr = convertJsonToNewStructure(_oldJsonArr);
-         
-         //========================
+        // Old JSON structure is converted to new JSON structure as mentioned in this ticket Sifter 15569
+        let _oldJsonArr = JSON.parse(JSON.stringify(productJsonArr));
+        let _newJsonArr = convertJsonToNewStructure(_oldJsonArr);
+        //========================
         // removeUnwantedData function added at the end. In order not to disturb the above process of creating json.
         // Some data and properties are needed for json creation but not needed in final json. 
         //So removeUnwantedData function will clean the final json and remove the unwanted data and properties which are not required.
         productJsonArr = removeUnwantedData(productJsonArr);
         //========================
         // merge old and new product json array to create final json array
-        let _finalJsonArray = [...productJsonArr,..._newJsonArr]  // commented on 21/3/20233. Changes for Sifter 15569 not tested
+        let _finalJsonArray = [...productJsonArr, ..._newJsonArr]  
         //===============================
-         _console("errorList = ", errorList);
-         _console("_toc = ", _toc);
+        _console("errorList = ", errorList);
+        _console("_toc = ", _toc);
         _console("_jsonObj = ", _jsonObj);
         _console("productJsonArr = ", productJsonArr);
-       
-         // commented on 21/3/20233. Changes for Sifter 15569 not tested
         _console("_newJsonArr = ", _newJsonArr);
         _console("_finalJsonArray = ", _finalJsonArray);
-        
-        if(applicationType == "react")
-        {
-           // localStorage.productJson = JSON.stringify(_finalJsonArray);
-        }
-        
-        // String is stored in localStorage for debugging 
-        // to get string. use this code - JSON.parse(localStorage.productJson);
         //===================================
         // use the below function to compare final json with sheet
-       // CheckFinalJsonWithSheet(_jsonObj,_toc);
+        // CheckFinalJsonWithSheet(_jsonObj,_toc);
         //===================================
-       // demoDeleteProductData("Hk81oS6cj");
-       //
-     
-       // hideLoader();
-        resolve({
-           // productStructure: productJsonArr,
-            errorList:errorList,
-            productStructure: _finalJsonArray, // commented on 21/3/20233. Changes for Sifter 15569 not tested
+        // demoDeleteProductData("Hk81oS6cj");
+        //
+         resolve({
+            // productStructure: productJsonArr,
+            errorList: errorList,
+            productStructure: _finalJsonArray,
         });
-        });
+    });
 }
 
-function correctUnitsHavingEmptyLessons(_jsonObj)
-{
+function correctUnitsHavingEmptyLessons(_jsonObj) {
     // As mentioned in the ticketes, 
     //https://perfectionlearning.sifterapp.com/issues/16813#comment_17454660
     //https://perfectionlearning.sifterapp.com/issues/16813#comment_17454500
     // This function will identify units having empty lesson and will rearrange it properly in the json.
     let emptyUnits = [];
-   if(_jsonObj.containers)
-   {
-    _jsonObj.containers.forEach((elm,index)=>{
-        if(elm)
-        {
-            if(elm.contents && elm.contents.length == 1)
-            {
-                if(elm.contents[0].menuText == elm.menuText)
-                {
-                    emptyUnits.push(elm.contents[0]);
-                } 
-            }
-            if((elm.contents && elm.contents.length == 0) && ((elm.containers && elm.containers.length == 1)))
-            {
-                if(elm.containers[0].contents && elm.containers[0].contents.length == 1)
-                {
-                    emptyUnits.push(elm.contents[0]);
+    if (_jsonObj.containers) {
+        _jsonObj.containers.forEach((elm, index) => {
+            if (elm) {
+                if (elm.contents && elm.contents.length == 1) {
+                    if (elm.contents[0].menuText == elm.menuText) {
+                        emptyUnits.push(elm.contents[0]);
+                    }
                 }
-            } 
-        }
-    });
+                if ((elm.contents && elm.contents.length == 0) && ((elm.containers && elm.containers.length == 1))) {
+                    if (elm.containers[0].contents && elm.containers[0].contents.length == 1) {
+                        emptyUnits.push(elm.contents[0]);
+                    }
+                }
+            }
+        });
 
-    _jsonObj.containers = _jsonObj.containers.filter((elm)=>{
-        if(elm && elm.contents)
-        {
-            return (elm.contents.length == 1 && elm.containers.length == 0 ) ? false : true;
-        }
-    });
+        _jsonObj.containers = _jsonObj.containers.filter((elm) => {
+            if (elm && elm.contents) {
+                return (elm.contents.length == 1 && elm.containers.length == 0) ? false : true;
+            }
+        });
 
-    //--------------------------
-   }
-   if(emptyUnits.length > 0)
-   {
-    _jsonObj.contents = [..._jsonObj.contents,...emptyUnits]
-   }
+        //--------------------------
+    }
+    if (emptyUnits.length > 0) {
+        _jsonObj.contents = [..._jsonObj.contents, ...emptyUnits]
+    }
 }
 
-function getProblemListPromise(_searchVal,applicationType) {
+function getProblemListPromise(_searchVal, applicationType) {
     //console.log("getProblemListPromise");
     //https://node.perfectionnext.com:8083/problems/query
     return new Promise((resolve, reject) => {
-      var settings = {
-        "async": true,
-        "crossDomain": true,
-        //"url": app.serverPath + app.paths.problemQuery,
-        "url": "https://node.perfectionnext.com:8083/problems/query",
-        "method": "PUT",
-        "headers": {
-          "Content-Type": "application/json"
-        },
-        "processData": false,
-        "data": JSON.stringify(_searchVal)
-      }
-      settings.applicationType = applicationType;
-      getHttpRequest(settings, function (_data) {
-        //console.log("ProblemList data = ",_data);
-        resolve(_data)
-      }, function (error) {
-        reject(error)
-      });
+        var settings = {
+            "async": true,
+            "crossDomain": true,
+            //"url": app.serverPath + app.paths.problemQuery,
+            "url": "https://node.perfectionnext.com:8083/problems/query",
+            "method": "PUT",
+            "headers": {
+                "Content-Type": "application/json"
+            },
+            "processData": false,
+            "data": JSON.stringify(_searchVal)
+        }
+        settings.applicationType = applicationType;
+        getHttpRequest(settings, function (_data) {
+            //console.log("ProblemList data = ",_data);
+            resolve(_data)
+        }, function (error) {
+            reject(error)
+        });
     });
-  }
+}
 
-  function getTagsPromise(tagIdArray,applicationType) {
+function getTagsPromise(tagIdArray, applicationType) {
     //console.log("getTagsPromise json js");
     //console.log("url == ",(app.serverPath + app.paths.tagFilter));
     //https://node.perfectionnext.com:8083/tag/filter
@@ -330,66 +263,24 @@ function getProblemListPromise(_searchVal,applicationType) {
     });
 }
 
-  
-/*
-  function getHttpRequest(settings, _callBackFn, _errorCallBackFn) {
-    console.log("getHttpRequest");
-    console.log("settings = ", settings);
-    let request = $.ajax(settings);
-    request.done(function(data) {
-        if (typeof _callBackFn !== "undefined") {
-            _callBackFn(data);
-            request = null;
-        }
-    });
-    request.fail(function() {
-        if (typeof _errorCallBackFn !== "undefined") {
-            _errorCallBackFn(request.status);
-        }
-        request = null;
-    });
-    //=====================================
-   
-//   axios({
-//    method: 'PUT',
-//    url: "https://node.perfectionnext.com:8083/usercontent/query",
-//    data:data
-//   }).then(function (response) {
-//    console.log(response);
-//   })
-//   .catch(function (error) {
-//    console.log(error);
-//   });
-  
-    //======================================
-  };
-
-  */
-
- 
 
 
-
- // commented on 21/3/20233. Changes for Sifter 15569 not tested
-
-function convertJsonToNewStructure(_oldJsonArr)
-{
+function convertJsonToNewStructure(_oldJsonArr) {
     let _newJsonArr = [];
-    _oldJsonArr.forEach((elm)=>{
+    _oldJsonArr.forEach((elm) => {
         let jsonObj = {};
         jsonObj.nodes = getNodesArr(elm.json);
-        jsonObj.product = {...elm.json.product}
-       //---------------------------------------------
-       let _productObj = {};
-       _productObj.json = jsonObj;
-       _productObj.productCode = elm.productCode+"_V2";
-       _newJsonArr.push(_productObj);
+        jsonObj.product = { ...elm.json.product }
+        //---------------------------------------------
+        let _productObj = {};
+        _productObj.json = jsonObj;
+        _productObj.productCode = elm.productCode + "_V2";
+        _newJsonArr.push(_productObj);
     });
     return _newJsonArr;
 }
 
-function getNodesArr(_jsonObj)
-{
+function getNodesArr(_jsonObj) {
     let nodeArr = [];
     _jsonObj.containers.forEach((containerObj) => {
         if (containerObj) {
@@ -404,26 +295,25 @@ function getNodesArr(_jsonObj)
     });
     //-----------------------------------------
     // Filter out nulls, which were causing the error reported in 16379#comment_17428442
-    _jsonObj.contents = _jsonObj.contents.filter(item=>item);
+    _jsonObj.contents = _jsonObj.contents.filter(item => item);
 
-    _jsonObj.contents.forEach((contentsObj)=>{
+    _jsonObj.contents.forEach((contentsObj) => {
         contentsObj.type = "content";
-        if(contentsObj.containers && contentsObj.contents)
-        {
-            contentsObj.nodes =  getNodesArr(contentsObj)
+        if (contentsObj.containers && contentsObj.contents) {
+            contentsObj.nodes = getNodesArr(contentsObj)
         }
         delete contentsObj.containers;
         delete contentsObj.contents;
         nodeArr.push(contentsObj);
-        });
+    });
     //----------------------------------------------
     // arrange array in ascending order as per displayOrder
     nodeArr.sort((a, b) => parseFloat(a.displayOrder) - parseFloat(b.displayOrder));
     //----------------------------------------------
     // Remove unwanted properties.
-    nodeArr = nodeArr.map((elm,index)=>{
-        if(elm.displayOrder)  delete elm.displayOrder;
-        if(elm.version)  delete elm.version;
+    nodeArr = nodeArr.map((elm, index) => {
+        if (elm.displayOrder) delete elm.displayOrder;
+        if (elm.version) delete elm.version;
         elm.index = index;
         return elm;
     });
@@ -433,70 +323,60 @@ function getNodesArr(_jsonObj)
 
 
 
-function cloneObject(obj)
-{
-    return JSON.parse(JSON.stringify(obj)); 
+function cloneObject(obj) {
+    return JSON.parse(JSON.stringify(obj));
 }
 
-function findMatch(version,productVersions)
-{
-    if(!productVersions) return;
-    if(productVersions == "All") return true;;
-    productVersions = productVersions.replace(/ /g,''); // remove spaces from string
+function findMatch(version, productVersions) {
+    if (!productVersions) return;
+    if (productVersions == "All") return true;;
+    productVersions = productVersions.replace(/ /g, ''); // remove spaces from string
     let productVersionArr = productVersions.split(",");
-    let matchArr = productVersionArr.filter((element)=>
-    {
+    let matchArr = productVersionArr.filter((element) => {
         return version == element ? element : false;
     });
-    return matchArr.length > 0 ? true:false;
+    return matchArr.length > 0 ? true : false;
 }
 
-function removeIndex(arr,index)
-{
+function removeIndex(arr, index) {
     //console.log("removeIndex "); //
     //arr.splice(index, 1);
     arr[index] = null;
 }
 
-function cleanArray(arr)
-{
-    arr =  arr.filter((elm)=>{
+function cleanArray(arr) {
+    arr = arr.filter((elm) => {
         return elm ? elm : false;
     });
     return arr;
 }
 
-function filterVersionData(arr,_version,name,type)
-{
-    
+function filterVersionData(arr, _version, name, type) {
+
     arr.forEach((elment, index) => {
         let _findMatch = findMatch(_version, elment.version);
-        !_findMatch ? removeIndex(arr,index) : null;
+        !_findMatch ? removeIndex(arr, index) : null;
         // console.log(type,name,index,_version,elment.version,_findMatch);
     });
 
     return cleanArray(arr);
 }
 
-function cleanVersionJson(obj)
-{
+function cleanVersionJson(obj) {
     //console.log("cleanVersionJson");
     //console.log("obj = ",obj);
-    obj.containers.forEach((element,index)=>{
-       // console.log(index," === ",element);
-        if(element.containers.length > 0)
-        {
-            element.containers.forEach((innerElement,innerIndex)=>{
-                if(innerElement.containers.length == 0 && innerElement.contents.length == 0)
-                {
+    obj.containers.forEach((element, index) => {
+        // console.log(index," === ",element);
+        if (element.containers.length > 0) {
+            element.containers.forEach((innerElement, innerIndex) => {
+                if (innerElement.containers.length == 0 && innerElement.contents.length == 0) {
                     element.containers[innerIndex] = null;
                 }
             });
             element.containers = cleanArray(element.containers);
         }
 
-        if(element.containers.length == 0 && element.contents.length == 0)
-        {
+        if (element.containers.length == 0 && element.contents.length == 0) {
             obj.containers[index] = null;
         }
     });
@@ -505,22 +385,19 @@ function cleanVersionJson(obj)
 
 }
 //=======================================================
-function removeUnwantedData(productJsonArr)
-{
+function removeUnwantedData(productJsonArr) {
     // This code will remove unwanted properties from the JSON string.
-    productJsonArr.forEach((elm)=>{
-       let _jsonObj = elm.json;
+    productJsonArr.forEach((elm) => {
+        let _jsonObj = elm.json;
         // Check Outer Content Array
         removeData(_jsonObj.contents);
         // Check Outer Container
         _jsonObj.containers.forEach((chapters) => {
-            if(chapters)
-            {
-                if(chapters.displayOrder)  delete chapters.displayOrder;
-                if(chapters.containers)
-                {
+            if (chapters) {
+                if (chapters.displayOrder) delete chapters.displayOrder;
+                if (chapters.containers) {
                     chapters.containers.forEach((lessons) => {
-                        if(lessons.displayOrder)  delete lessons.displayOrder;
+                        if (lessons.displayOrder) delete lessons.displayOrder;
                         removeData(lessons.contents);
                     });
                 }
@@ -531,20 +408,16 @@ function removeUnwantedData(productJsonArr)
     return productJsonArr;
 }
 
-function removeData(obj)
-{
-    if(!obj) return;
+function removeData(obj) {
+    if (!obj) return;
     obj.forEach((elm) => {
-        if(elm)
-        {
-            if(elm.version)  delete elm.version;
-            if(elm.displayOrder)  delete elm.displayOrder;
-            if(elm.gradingObject)
-            {
+        if (elm) {
+            if (elm.version) delete elm.version;
+            if (elm.displayOrder) delete elm.displayOrder;
+            if (elm.gradingObject) {
                 rearrangeGradingObject(elm);
             }
-            if(elm.sublessons)
-            {
+            if (elm.sublessons) {
                 cleanSublessonArr(elm.sublessons);
             }
         }
@@ -552,31 +425,27 @@ function removeData(obj)
 
 }
 
-function cleanSublessonArr(sublessons)
-{
+function cleanSublessonArr(sublessons) {
     //console.log("cleanSublessonArr = ",sublessons);
-    sublessons.forEach((elm)=>{
-        if(elm.gradingObject)
-        {
-           rearrangeGradingObject(elm);
+    sublessons.forEach((elm) => {
+        if (elm.gradingObject) {
+            rearrangeGradingObject(elm);
         }
     });
 }
 
-function rearrangeGradingObject(elm)
-{
+function rearrangeGradingObject(elm) {
     let qArrayIndex = elm.gradingObject.arrayIndex;
-    if(elm.questions)
-    {
+    if (elm.questions) {
         //elm.questions.splice(qArrayIndex, 1);
-        elm.questions = elm.questions.filter((elm)=>{
+        elm.questions = elm.questions.filter((elm) => {
             return elm.type != "grading" ? true : false;
         });
     }
     delete elm.gradingObject.arrayIndex;
     delete elm.gradingObject.questionID;
     elm.gradingObject.feedbacks[0] = elm.gradingObject.feedbacks[0].split(", question")[0];
-   //console.log("elm.gradingObject = ",elm.gradingObject.questionID);
+    //console.log("elm.gradingObject = ",elm.gradingObject.questionID);
 }
 
 //=====================================
@@ -587,17 +456,15 @@ function createProductJsonVersions(_jsonObj, productVersionObj) {
     _console("productVersionObj = ", productVersionObj);
     //console.log("size of productVersionObj = ",_.size(productVersionObj));
     let productJsonArray = [];
-    productJsonArray.push({productCode:_jsonObj.product.productCode,json:_jsonObj});
+    productJsonArray.push({ productCode: _jsonObj.product.productCode, json: _jsonObj });
     //========================
     let productChild = [];
-    for(var i in productVersionObj)
-    {
+    for (var i in productVersionObj) {
         productChild.push(i);
     }
     //========================
-   // console.log("productChild = ",productChild);
-    if(productChild.length == 1 && productChild[0] == _jsonObj.product.productCode)
-    {
+    // console.log("productChild = ",productChild);
+    if (productChild.length == 1 && productChild[0] == _jsonObj.product.productCode) {
         return productJsonArray;
     }
 
@@ -609,68 +476,62 @@ function createProductJsonVersions(_jsonObj, productVersionObj) {
         copyJsonObj.product.series = productVersionObj[i].programSeries;
         copyJsonObj.product.version = productVersionObj[i].version;
         //====================== Check Outer Content Array
-        copyJsonObj.contents = filterVersionData(copyJsonObj.contents, _version,copyJsonObj.menuText, "unit");
+        copyJsonObj.contents = filterVersionData(copyJsonObj.contents, _version, copyJsonObj.menuText, "unit");
         //======================= Check outer Container Array
         copyJsonObj.containers.forEach((chapters) => {
             chapters.containers.forEach((lessons) => {
-                lessons.contents = filterVersionData(lessons.contents, _version,lessons.menuText, "sublesson");
+                lessons.contents = filterVersionData(lessons.contents, _version, lessons.menuText, "sublesson");
             });
-            chapters.contents = filterVersionData(chapters.contents, _version,chapters.menuText,"lesson");
+            chapters.contents = filterVersionData(chapters.contents, _version, chapters.menuText, "lesson");
         });
         //===================================
         copyJsonObj = cleanVersionJson(copyJsonObj); // remove blank lessons
         productVersionObj[i].json = copyJsonObj;
-        productJsonArray.push({productCode:i,json:copyJsonObj});
+        productJsonArray.push({ productCode: i, json: copyJsonObj });
     }
-   // console.log("productVersionObj after = ", productVersionObj);
+    // console.log("productVersionObj after = ", productVersionObj);
     return productJsonArray;
-   // return productVersionObj;
-  
+    // return productVersionObj;
+
 }
 //===================================
-function getColumnName(sheetColumns,_productTab)
-{
+function getColumnName(sheetColumns, _productTab) {
     let sheetColumnsObj = {};
-    sheetColumns.forEach((elm)=>{
-        for(var i in _productTab)
-        {
-            if(_productTab[i].v == elm)
-            {
+    sheetColumns.forEach((elm) => {
+        for (var i in _productTab) {
+            if (_productTab[i].v == elm) {
                 let _name = i;
-                if(!isNaN(i.charAt(1)))
-                {
+                if (!isNaN(i.charAt(1))) {
                     _name = i.charAt(0);
                 }
-                else
-                {
+                else {
                     _name = i.substring(0, 2);
                 }
                 sheetColumnsObj[elm] = _name;
-                break; 
+                break;
             }
         }
     });
     //================
-    
+
     //================
     return sheetColumnsObj;
 }
 
-function getProductVersions(workbook)
-{
+function getProductVersions(workbook) {
     let _productTab = workbook.Sheets["Product"];
-    let sheetColumns = ["Product Code","Product Name","Program Series","Subject","Version"];
-    let sheetColumnsObj = getColumnName(sheetColumns,_productTab);
+    let sheetColumns = ["Product Code", "Product Name", "Program Series", "Subject", "Version"];
+    let sheetColumnsObj = getColumnName(sheetColumns, _productTab);
     let productVersionObj = {};
     for (var i in _productTab) {
         if (i.indexOf("A") != -1 && i != "A1" && !isNaN(i.charAt(1))) {
-            let _rowNum = i.charAt(1); 
+            let _rowNum = i.charAt(1);
             //===========================
-            let _productCode =  _productTab[sheetColumnsObj["Product Code"]+_rowNum].v;
-            let productName = _productTab[sheetColumnsObj["Product Name"]+_rowNum].v;
-            let programSeries = _productTab[sheetColumnsObj["Program Series"]+_rowNum].v;
-            let _subject = _productTab[sheetColumnsObj["Subject"]+_rowNum].v;
-            let _version = _productTab[sheetColumnsObj["Version"]+_rowNum].v;
+            let _productCode = _productTab[sheetColumnsObj["Product Code"] + _rowNum].v;
+            let productName = _productTab[sheetColumnsObj["Product Name"] + _rowNum].v;
+            let programSeries = _productTab[sheetColumnsObj["Program Series"] + _rowNum].v;
+            let _subject = _productTab[sheetColumnsObj["Subject"] + _rowNum].v;
+            let _version = _productTab[sheetColumnsObj["Version"] + _rowNum].v;
             //===============================
             let rowObject = {};
             rowObject.rowNum = _rowNum;
@@ -685,23 +546,20 @@ function getProductVersions(workbook)
     return productVersionObj;
 }
 
-function findDuplicateIndex(_lessonId,_subLessons)
-{
+function findDuplicateIndex(_lessonId, _subLessons) {
     //console.log("findDuplicateIndex = ",_lessonId);
     let indexArr = [];
     let duplicateIndex = false;
-    _subLessons.forEach((elm)=>{
-        if(indexArr.indexOf(elm.subLessonIndex) == -1)
-        {
+    _subLessons.forEach((elm) => {
+        if (indexArr.indexOf(elm.subLessonIndex) == -1) {
             indexArr.push(elm.subLessonIndex);
         }
-        else
-        {
+        else {
             duplicateIndex = true;
         }
     });
     return duplicateIndex;
-    
+
 
 }
 
@@ -715,14 +573,14 @@ function correctSublessonIndexErrors(_lessons) {
         let duplicateIndex = findDuplicateIndex(i, _subLessons);
         if (duplicateIndex) {
             let newArr = [];
-           let sortedata = _subLessons.sort(function(a, b) {
+            let sortedata = _subLessons.sort(function (a, b) {
                 return (a.subLessonIndex - b.subLessonIndex);
             });
             sortedata.forEach((element, index) => {
                 element.subLessonIndex = index;
-               // newArr.push(element);
+                // newArr.push(element);
             });
-            
+
         }
         //console.log(i," ==== ",_subLessons);
     }
@@ -730,7 +588,7 @@ function correctSublessonIndexErrors(_lessons) {
 }
 
 function demoDeleteProductData(idToDelete) {
-    if(!idToDelete) return;
+    if (!idToDelete) return;
     /*
         This API was added to remove unwanted files uploaded on SERVER API
         for tickete https://perfectionlearning.sifterapp.com/issues/12912
@@ -739,33 +597,33 @@ function demoDeleteProductData(idToDelete) {
     // console.log("currentProductId = ", currentProductId);
     //=======================================
     var data = {
-      filter: {
-        _id: {
-          $in: [idToDelete],
+        filter: {
+            _id: {
+                $in: [idToDelete],
+            },
         },
-      },
     };
 
     var settings = {
-      method: "PUT",
-      xhrFields: {
-        withCredentials: true,
-      },
-      headers: {
-        "Content-Type": "application/json",
-      },
-      url: "https://node.perfectionnext.com:8083/usercontent/delete",
-      data: JSON.stringify(data),
+        method: "PUT",
+        xhrFields: {
+            withCredentials: true,
+        },
+        headers: {
+            "Content-Type": "application/json",
+        },
+        url: "https://node.perfectionnext.com:8083/usercontent/delete",
+        data: JSON.stringify(data),
     };
 
-    console.log("settings = ",settings);
-    
+    console.log("settings = ", settings);
+
     $.ajax(settings).done(function (response) {
-      console.log(response);
+        console.log(response);
     });
-   
+
     //==========================================
-  }
+}
 
 function CheckFinalJsonWithSheet(_jsonObj, _toc) {
     console.log("CheckFinalJsonWithSheet");
@@ -824,12 +682,10 @@ function CheckFinalJsonWithSheet(_jsonObj, _toc) {
             }
         }
         //console.log("isContainer = ",isContainer);
-        console.log("_checkUnit = ",_checkUnit);
+        console.log("_checkUnit = ", _checkUnit);
         // console.log("childrensArr = ",childrensArr);
-        if (_checkUnit.length > 0)
-        {
-            if(_checkUnit[0].containers)
-            {
+        if (_checkUnit.length > 0) {
+            if (_checkUnit[0].containers) {
                 if (_unitContainer.length == _checkUnit[0].containers.length) {
                     console.log("%c Inner container count matched", 'color: green');
                     _checkUnit[0].containers.forEach((lesson) => {
@@ -851,8 +707,8 @@ function CheckFinalJsonWithSheet(_jsonObj, _toc) {
                                 let _tocSublessons = _toc[i].children[lesson.menuText.split(":")[0]].children;
                                 jsonSublessons.forEach((sublesson) => {
                                     if (_tocSublessons[sublesson.menuText.split(":")[0]]) {
-                                        console.log("%c "+sublesson.resourceCode+" :: " + sublesson.menuText + " :: text verified ", 'color: green');
-                                       // console.log("sublesson = ",sublesson);
+                                        console.log("%c " + sublesson.resourceCode + " :: " + sublesson.menuText + " :: text verified ", 'color: green');
+                                        // console.log("sublesson = ",sublesson);
                                     } else {
                                         console.log("%c " + sublesson.menuText + " :: text mismatch ", 'color: red');
                                         errorFound = true;
@@ -865,14 +721,13 @@ function CheckFinalJsonWithSheet(_jsonObj, _toc) {
                     });
                 } else {
                     console.log("%c Inner container count Error", 'color: red');
-                    console.log("_unitContainer = ",_unitContainer)
-                    console.log("_checkUnit[0].containers = ",_checkUnit[0].containers)
+                    console.log("_unitContainer = ", _unitContainer)
+                    console.log("_checkUnit[0].containers = ", _checkUnit[0].containers)
                     errorFound = true;
                 }
             }
-            
-            if(_checkUnit[0].contents)
-            {
+
+            if (_checkUnit[0].contents) {
                 if (_unitContent.length == _checkUnit[0].contents.length) {
                     console.log("%c Inner contents count matched", 'color: green');
                     _checkUnit[0].contents.forEach((lesson) => {
@@ -880,8 +735,8 @@ function CheckFinalJsonWithSheet(_jsonObj, _toc) {
                             console.log("%c " + lesson.menuText + " :: text mismatch ", 'color: red');
                             errorFound = true;
                         } else {
-                            console.log("%c "+lesson.resourceCode+" :: "+ lesson.menuText + " :: text verified ", 'color: green');
-                           // console.log("lesson.resourceCode = ",lesson.resourceCode);
+                            console.log("%c " + lesson.resourceCode + " :: " + lesson.menuText + " :: text verified ", 'color: green');
+                            // console.log("lesson.resourceCode = ",lesson.resourceCode);
                             let tocLesson = _toc[i].children[lesson.menuText.split(":")[0]];
                             /*
                             if(lesson.resourceCode && lesson.resourceCode == tocLesson.resourceCode)
@@ -893,25 +748,22 @@ function CheckFinalJsonWithSheet(_jsonObj, _toc) {
                                 console.log("%c Resource Code Error ", 'color: red');
                             }
                             */
-                            
-                           // console.log(i,_toc[i]);
-                           // console.log("lesson == ",lesson);
+
+                            // console.log(i,_toc[i]);
+                            // console.log("lesson == ",lesson);
                             //console.log("resource code == ",_toc[i].children[lesson.menuText.split(":")[0]]);
                             //===============================
                             let sublessonLength = 0;
-                            if(_toc[i].children[lesson.menuText.split(":")[0]])
-                            {
+                            if (_toc[i].children[lesson.menuText.split(":")[0]]) {
                                 sublessonLength = _.size(_toc[i].children[lesson.menuText.split(":")[0]].children);
                             }
-                            else
-                            {
-                                if(_toc[i].children[lesson.menuText])
-                                {
+                            else {
+                                if (_toc[i].children[lesson.menuText]) {
                                     sublessonLength = _.size(_toc[i].children[lesson.menuText].children);
                                 }
                             }
 
-                           
+
 
 
 
@@ -933,25 +785,25 @@ function CheckFinalJsonWithSheet(_jsonObj, _toc) {
                                     }
                                 });
                             }
-                           // console.log("-----------------------");
+                            // console.log("-----------------------");
                             // console.log(" unit == _toc[i] = ",_toc[i].children[lesson.menuText]);
                             //===============================
                         }
                     });
                 } else {
                     console.log("%c Inner contents count Error", 'color: red');
-                    console.log("_unitContent = ",_unitContent)
-                    console.log("_checkUnit[0].contents = ",_checkUnit[0].contents)
+                    console.log("_unitContent = ", _unitContent)
+                    console.log("_checkUnit[0].contents = ", _checkUnit[0].contents)
                     errorFound = true;
                 }
             }
-    
+
         }
-       
-        
-       // console.log("_checkUnit = ", _checkUnit);
+
+
+        // console.log("_checkUnit = ", _checkUnit);
         // console.log("_unitContainer = ",_unitContainer);
-         //console.log("_unitContent = ",_unitContent);
+        //console.log("_unitContent = ",_unitContent);
         console.log("======================================");
     }
     if (errorFound) {
@@ -962,9 +814,7 @@ function CheckFinalJsonWithSheet(_jsonObj, _toc) {
 }
 
 function _console(...obj) {
-    // Please change to true to enable consoles
-    var bool = false;  
-    if (bool) {
+    if (enableConsole) {
         console.log(...obj);
     }
 }
@@ -1009,7 +859,7 @@ function createRawProductStructure(unitstructure, _lessons, currentProductAssign
         });
         if (assignments.length > 0) {
             // Assessments object data are commented. As all data availbale in assignments
-           // _unitObj._assignments = assignments;
+            // _unitObj._assignments = assignments;
         }
         //========================
         _productStructure.push(_unitObj);
@@ -1018,50 +868,50 @@ function createRawProductStructure(unitstructure, _lessons, currentProductAssign
 }
 //=======================
 function correctLessonTitle(_lessonTitle, _tocLessons, chapterName) {
-  let _titleArr = _lessonTitle.split(":");
-  if (_titleArr.length > 2) {
-    // Its is done for connection ELA titles. As there names contains units and chapters
-    _lessonTitle = _titleArr[_titleArr.length - 1].trim();
-  }
-
-  if (_titleArr.length == 2 && _lessonTitle.indexOf(chapterName) != -1) {
-    _lessonTitle = _titleArr[_titleArr.length - 1].trim();
-  }
-
-  //=========== Check lesson name in TOC Sheet object ============
-
-  if (_tocLessons) {
-    if (_tocLessons[_lessonTitle]) {
-      //console.log("_lessonTitle found ===",_lessonTitle);
-    } else {
-      // console.log("_lessonTitle not found  ===",_lessonTitle);
-      let _similarFoundArr = [];
-      for (var m in _tocLessons) {
-        if (m.indexOf(_lessonTitle) != -1) {
-          _similarFoundArr.push(m);
-          // console.log("Similar found   ===",m);
-        }
-      }
-      if (_similarFoundArr.length == 1) {
-        _lessonTitle = _similarFoundArr[0];
-      }
-      if (
-        _lessonTitle.indexOf("Review") != -1 &&
-        _lessonTitle.indexOf("Writing") != -1
-      ) {
-        _lessonTitle = "Writing";
-      }
-      if (_lessonTitle.indexOf("Student Support") != -1) {
-        _lessonTitle = _lessonTitle.split(":")[1].trim();
-      }
+    let _titleArr = _lessonTitle.split(":");
+    if (_titleArr.length > 2) {
+        // Its is done for connection ELA titles. As there names contains units and chapters
+        _lessonTitle = _titleArr[_titleArr.length - 1].trim();
     }
-  }
-  return _lessonTitle;
+
+    if (_titleArr.length == 2 && _lessonTitle.indexOf(chapterName) != -1) {
+        _lessonTitle = _titleArr[_titleArr.length - 1].trim();
+    }
+
+    //=========== Check lesson name in TOC Sheet object ============
+
+    if (_tocLessons) {
+        if (_tocLessons[_lessonTitle]) {
+            //console.log("_lessonTitle found ===",_lessonTitle);
+        } else {
+            // console.log("_lessonTitle not found  ===",_lessonTitle);
+            let _similarFoundArr = [];
+            for (var m in _tocLessons) {
+                if (m.indexOf(_lessonTitle) != -1) {
+                    _similarFoundArr.push(m);
+                    // console.log("Similar found   ===",m);
+                }
+            }
+            if (_similarFoundArr.length == 1) {
+                _lessonTitle = _similarFoundArr[0];
+            }
+            if (
+                _lessonTitle.indexOf("Review") != -1 &&
+                _lessonTitle.indexOf("Writing") != -1
+            ) {
+                _lessonTitle = "Writing";
+            }
+            if (_lessonTitle.indexOf("Student Support") != -1) {
+                _lessonTitle = _lessonTitle.split(":")[1].trim();
+            }
+        }
+    }
+    return _lessonTitle;
 }
 //=======================
-function createProductStructureJson(_productStructure, _problemInfo, currentProductId, toc, lessonTitles,errorList) {
+function createProductStructureJson(_productStructure, _problemInfo, currentProductId, toc, lessonTitles, errorList) {
     _console("createProductStructureJson");
-   // _console("toc = ",toc);
+    // _console("toc = ",toc);
     let obj = {};
     obj.product = {
         "productCode": currentProductId,
@@ -1071,95 +921,83 @@ function createProductStructureJson(_productStructure, _problemInfo, currentProd
     for (var i = 0; i < _productStructure.length; i++) {
         let _unitObj = {};
         _unitObj.menuText = _productStructure[i].title;
-        let unitDescObj = getColumnDesc(_unitObj.menuText, null, null, toc,"unit");
+        let unitDescObj = getColumnDesc(_unitObj.menuText, null, null, toc, "unit");
         if (unitDescObj.desc) {
-           _unitObj.menuText = _unitObj.menuText + ": " + unitDescObj.desc;
+            _unitObj.menuText = _unitObj.menuText + ": " + unitDescObj.desc;
         }
 
-        if(unitDescObj.displayOrder)
-        {
+        if (unitDescObj.displayOrder) {
             _unitObj.displayOrder = unitDescObj.displayOrder * 1;
         }
-        if(unitDescObj.navigationId)
-        {
-            _unitObj.navID = unitDescObj.navigationId ;
+        if (unitDescObj.navigationId) {
+            _unitObj.navID = unitDescObj.navigationId;
         }
-        if(unitDescObj.headerData)
-        {
-            _unitObj.headerData = unitDescObj.headerData ;
+        if (unitDescObj.headerData) {
+            _unitObj.headerData = unitDescObj.headerData;
         }
         _unitObj.containers = [];
         _unitObj.contents = [];
         //console.log("_unitObj.menuText = ",_unitObj.menuText);
         let _unitName = _unitObj.menuText.split(":")[0].trim();
         //console.log("_unitName = ",_unitName);
-        if(!toc[_unitName])
-            {
-               //  console.log("Unit name not present in toc ");
-              errorList.push({type:"error",msg:"⚠ JSON Error: Unit ["+_unitName+"] found in ProblemEditor but not found in program TOC."});
-            }
+        if (!toc[_unitName]) {
+            //  console.log("Unit name not present in toc ");
+            errorList.push({ type: "error", msg: "⚠ JSON Error: Unit [" + _unitName + "] found in ProblemEditor but not found in program TOC." });
+        }
         //============== Chapters ==========
-        if(toc[_unitName] && _productStructure[i])
-        {
-            let {missingChapters,mDashCharacterArr} = findChapterMismatch(toc[_unitName].children,_productStructure[i].chapters);
+        if (toc[_unitName] && _productStructure[i]) {
+            let { missingChapters, mDashCharacterArr } = findChapterMismatch(toc[_unitName].children, _productStructure[i].chapters);
             //console.log("mDashCharacterArr = ",mDashCharacterArr);
-            if(missingChapters.length > 0)
-            {
-             missingChapters.forEach((elm)=>{
-                 errorList.push({type:"error",msg:"⚠ JSON Error: Chapter ["+elm+"] of Unit ["+_unitName+"] found in program TOC but not found in ObjectEditor."});
-             });
-             
+            if (missingChapters.length > 0) {
+                missingChapters.forEach((elm) => {
+                    errorList.push({ type: "error", msg: "⚠ JSON Error: Chapter [" + elm + "] of Unit [" + _unitName + "] found in program TOC but not found in ObjectEditor." });
+                });
+
             }
 
-            if(mDashCharacterArr.length > 0)
-            {
-                mDashCharacterArr.forEach((elm)=>{
-                 errorList.push({type:"error",msg:"⚠ JSON Error: Chapter ["+elm.title+"] of Unit ["+_unitName+"] contains mDASH Character. Please check."});
-             });
-             
+            if (mDashCharacterArr.length > 0) {
+                mDashCharacterArr.forEach((elm) => {
+                    errorList.push({ type: "error", msg: "⚠ JSON Error: Chapter [" + elm.title + "] of Unit [" + _unitName + "] contains mDASH Character. Please check." });
+                });
+
             }
 
         }
-           
+
         for (var j = 0; j < _productStructure[i].chapters.length; j++) {
             let _chapterObj = {};
             _chapterObj.menuText = _productStructure[i].chapters[j].title;
-            let _chName = getChapterMenuText( _chapterObj.menuText,toc);
+            let _chName = getChapterMenuText(_chapterObj.menuText, toc);
             /*
             if (_chName.indexOf("Chapter") != -1 && _chName.indexOf(":") != -1) {
                 _chName = _chapterObj.menuText.split(":")[0].trim();
             }
             */
-            let chapterDescObj = getColumnDesc(_unitObj.menuText.split(":")[0], _chName,null,toc,"lesson");
-           if (chapterDescObj.desc) {
+            let chapterDescObj = getColumnDesc(_unitObj.menuText.split(":")[0], _chName, null, toc, "lesson");
+            if (chapterDescObj.desc) {
                 _chapterObj.menuText = _chName + ": " + chapterDescObj.desc;
             }
             //console.log("_chName = ",_chName,chapterDescObj);
-            if(chapterDescObj.displayOrder)
-            {
+            if (chapterDescObj.displayOrder) {
                 _chapterObj.displayOrder = chapterDescObj.displayOrder * 1;
             }
-            if(chapterDescObj.navigationId)
-            {
-                _chapterObj.navID = chapterDescObj.navigationId ;
+            if (chapterDescObj.navigationId) {
+                _chapterObj.navID = chapterDescObj.navigationId;
             }
-            if(chapterDescObj.headerData)
-            {
-                _chapterObj.headerData = chapterDescObj.headerData ;
+            if (chapterDescObj.headerData) {
+                _chapterObj.headerData = chapterDescObj.headerData;
             }
-            _chapterObj.containers = []; 
+            _chapterObj.containers = [];
             _chapterObj.contents = [];
             _chapterObj.id = _productStructure[i].chapters[j].id; // temp commented
             //============================
             let _unitName = _unitObj.menuText.split(":")[0].trim();
-           // let _chapterName = _chapterObj.menuText.split(":")[0].trim();
-            let _chapterName = getChapterMenuText(_chapterObj.menuText,toc);
+            // let _chapterName = _chapterObj.menuText.split(":")[0].trim();
+            let _chapterName = getChapterMenuText(_chapterObj.menuText, toc);
             let _tocLessons;
-            if(toc[_unitName])
-            {
-                if(toc[_unitName].children[_chapterName])
-                {
-                    _tocLessons  = toc[_unitName].children[_chapterName].children;
+            if (toc[_unitName]) {
+                if (toc[_unitName].children[_chapterName]) {
+                    _tocLessons = toc[_unitName].children[_chapterName].children;
                 }
 
             }
@@ -1167,63 +1005,57 @@ function createProductStructureJson(_productStructure, _problemInfo, currentProd
             //console.log("_tocLessons  ===",_tocLessons);
             //console.log("_productStructure[i].chapters[j].lessons  ===",_productStructure[i].chapters[j].lessons);
 
-            if(toc[_unitName] && _productStructure[i] && _productStructure[i].chapters[j])
-            {
-                let {missingLessons,mDashCharacterArr} = findLessonMismatch(_tocLessons,_productStructure[i].chapters[j].lessons);
-            //console.log("missingLessons  ===",missingLessons);
-                if(missingLessons.length > 0)
-                {
-                    missingLessons.forEach((elm)=>{
-                     errorList.push({type:"error",msg:"⚠ JSON Error: Lesson ["+elm+"] of Unit ["+_unitName+"], Chapter["+_chapterName+"] found in program TOC but not found in ObjectEditor."});
-                 });
-                 
+            if (toc[_unitName] && _productStructure[i] && _productStructure[i].chapters[j]) {
+                let { missingLessons, mDashCharacterArr } = findLessonMismatch(_tocLessons, _productStructure[i].chapters[j].lessons);
+                //console.log("missingLessons  ===",missingLessons);
+                if (missingLessons.length > 0) {
+                    missingLessons.forEach((elm) => {
+                        errorList.push({ type: "error", msg: "⚠ JSON Error: Lesson [" + elm + "] of Unit [" + _unitName + "], Chapter[" + _chapterName + "] found in program TOC but not found in ObjectEditor." });
+                    });
+
                 }
 
-                if(mDashCharacterArr.length > 0)
-                {
-                    mDashCharacterArr.forEach((elm)=>{
-                     errorList.push({type:"error",msg:"⚠ JSON Error: Lesson ["+elm.title+"] of Unit ["+_unitName+"], Chapter["+_chapterName+"] contains mDash. Please check."});
-                 });
-                 
+                if (mDashCharacterArr.length > 0) {
+                    mDashCharacterArr.forEach((elm) => {
+                        errorList.push({ type: "error", msg: "⚠ JSON Error: Lesson [" + elm.title + "] of Unit [" + _unitName + "], Chapter[" + _chapterName + "] contains mDash. Please check." });
+                    });
+
                 }
             }
 
-            
 
-          //console.log("_chapterObj.menuText = ",_chapterObj.menuText);
+
+            //console.log("_chapterObj.menuText = ",_chapterObj.menuText);
             //=============== Lessons ====================
             for (var k = 0; k < _productStructure[i].chapters[j].lessons.length; k++) {
                 let _lessonObj = {};
                 let _lessonTitle = _productStructure[i].chapters[j].lessons[k].title;
 
                 // This function is written to correct errors in lesson titiles, mosly in connection ELA products
-                _lessonTitle = correctLessonTitle(_lessonTitle,_tocLessons,_chName);
+                _lessonTitle = correctLessonTitle(_lessonTitle, _tocLessons, _chName);
 
                 // console.log("_lessonTitle = ",_lessonTitle);
 
                 //===========================================
-               
+
                 _lessonObj.menuText = _lessonTitle;
-                let lessonDescObj = getColumnDesc(_unitObj.menuText.split(":")[0],_chName, _lessonObj.menuText,toc,"sublesson");
+                let lessonDescObj = getColumnDesc(_unitObj.menuText.split(":")[0], _chName, _lessonObj.menuText, toc, "sublesson");
                 if (lessonDescObj.desc) {
                     _lessonObj.menuText = _lessonObj.menuText + ": " + lessonDescObj.desc;
                 }
-               // console.log("_lessonObj = ",_lessonObj.menuText,lessonDescObj);
-                if(lessonDescObj.displayOrder)
-                {
+                // console.log("_lessonObj = ",_lessonObj.menuText,lessonDescObj);
+                if (lessonDescObj.displayOrder) {
                     _lessonObj.displayOrder = lessonDescObj.displayOrder * 1;
                 }
-                if(lessonDescObj.navigationId)
-                {
-                    _lessonObj.navID = lessonDescObj.navigationId ;
+                if (lessonDescObj.navigationId) {
+                    _lessonObj.navID = lessonDescObj.navigationId;
                 }
-                if(lessonDescObj.headerData)
-                {
-                    _lessonObj.headerData = lessonDescObj.headerData ;
+                if (lessonDescObj.headerData) {
+                    _lessonObj.headerData = lessonDescObj.headerData;
                 }
                 _lessonObj.questions = [];
                 _lessonObj.sublessons = [];
-               //console.log("_lessonObj.menuText = ",_lessonObj.menuText);
+                //console.log("_lessonObj.menuText = ",_lessonObj.menuText);
                 //================== SUB LESSONS ==================
                 let _sublessons = _productStructure[i].chapters[j].lessons[k].sublessons[0];
                 //console.log("_sublessons = ",_sublessons);
@@ -1232,25 +1064,22 @@ function createProductStructureJson(_productStructure, _problemInfo, currentProd
                         let _subLessonObj = {};
                         if (!_sublessons[l].name || checkForLongSpacesInString(_sublessons[l].name)) {
                             let _n = _sublessons[l].presentation_data.subLessonType;
-                            if(_n == "Self Check") _n = "Check";
-                            _sublessons[l].name = _n; 
+                            if (_n == "Self Check") _n = "Check";
+                            _sublessons[l].name = _n;
                             //console.log("_sublessons[l].presentation_data.subLessonType = ",_n);
                         }
                         //console.log("_sublessons[l].name = ",_sublessons[l].name);
-                       //console.log("_sublessons[l].lessonName = ",_sublessons[l].lessonName);
-                        if(!_sublessons[l].presentation_data.subLessonType && !_sublessons[l].presentation_data.subLessonName)
-                        {
-                            errorList.push({type:"error",msg:"⚠ JSON Error: Invalid values of sublesson Type is present in "+_unitObj.menuText+", "+_chapterObj.menuText+", Assignment ID: "+_sublessons[l].assignmentID});
+                        //console.log("_sublessons[l].lessonName = ",_sublessons[l].lessonName);
+                        if (!_sublessons[l].presentation_data.subLessonType && !_sublessons[l].presentation_data.subLessonName) {
+                            errorList.push({ type: "error", msg: "⚠ JSON Error: Invalid values of sublesson Type is present in " + _unitObj.menuText + ", " + _chapterObj.menuText + ", Assignment ID: " + _sublessons[l].assignmentID });
                         }
                         let _sublessonName = _sublessons[l].name;
-                        if(!_sublessonName)
-                        {
+                        if (!_sublessonName) {
                             _sublessonName = _sublessons[l].lessonName;
                         }
                         //if (_sublessons[l].name) 
-                        if (_sublessonName) 
-                        {
-                           // _subLessonObj.name = getTextContent(_sublessons[l].name);
+                        if (_sublessonName) {
+                            // _subLessonObj.name = getTextContent(_sublessons[l].name);
                             _subLessonObj.name = getTextContent(_sublessonName);
                             _subLessonObj.index = _sublessons[l].subLessonIndex;
                             _subLessonObj.questions = [];
@@ -1285,128 +1114,74 @@ function createProductStructureJson(_productStructure, _problemInfo, currentProd
 }
 
 
-function  findChapterMismatch(tocChapters,problemEditorchapters)
-{
+function findChapterMismatch(tocChapters, problemEditorchapters) {
     //console.log("findChapterMismatch");
-   // console.log("tocChapters = ",tocChapters);
-   // console.log("problemEditorchapters = ",problemEditorchapters);
+    // console.log("tocChapters = ",tocChapters);
+    // console.log("problemEditorchapters = ",problemEditorchapters);
     let missingChapters = [];
     let mDashCharacterArr = [];
-    for(var i in tocChapters)
-    {
+    for (var i in tocChapters) {
         let _found = false;
-        problemEditorchapters.forEach((elm)=>{
-          if((i.trim() == elm.title.split(":")[0].trim()) || (i.trim() == elm.title.trim()))
-            {
+        problemEditorchapters.forEach((elm) => {
+            if ((i.trim() == elm.title.split(":")[0].trim()) || (i.trim() == elm.title.trim())) {
                 _found = true;
             }
-           // console.log(i,elm.title,(similarity(i, elm.title) * 100)," mdash === ",elm.title.indexOf("—"));
-            if(elm.title.indexOf("—") != -1)
-            {
-                mDashCharacterArr.push({title:elm.title,location:"ProblemEditor"});
+            // console.log(i,elm.title,(similarity(i, elm.title) * 100)," mdash === ",elm.title.indexOf("—"));
+            if (elm.title.indexOf("—") != -1) {
+                mDashCharacterArr.push({ title: elm.title, location: "ProblemEditor" });
             }
-            if(i.indexOf("—") != -1)
-            {
-                mDashCharacterArr.push({title:i,location:"spreadsheet"});
+            if (i.indexOf("—") != -1) {
+                mDashCharacterArr.push({ title: i, location: "spreadsheet" });
             }
         });
-         if(i != "EMPTY" && !_found)
-        {
+        if (i != "EMPTY" && !_found) {
             missingChapters.push(i);
         }
     }
-    return {missingChapters,mDashCharacterArr};
+    return { missingChapters, mDashCharacterArr };
 }
 
-function  findLessonMismatch(tocLessons,problemEditorLessons)
-{
+function findLessonMismatch(tocLessons, problemEditorLessons) {
     let missingLessons = [];
     let mDashCharacterArr = [];
-    for(var i in tocLessons)
-    {
+    for (var i in tocLessons) {
         let _found = false;
-        problemEditorLessons.forEach((elm)=>{
-          if((i.trim() == elm.title.split(":")[0].trim()) || (i.trim() == elm.title.trim()))
-            {
+        problemEditorLessons.forEach((elm) => {
+            if ((i.trim() == elm.title.split(":")[0].trim()) || (i.trim() == elm.title.trim())) {
                 _found = true;
             }
             //console.log(i,"::",elm.title,"::",_found);
-            if(elm.title.indexOf("—") != -1)
-            {
-                mDashCharacterArr.push({title:elm.title,location:"ProblemEditor"});
+            if (elm.title.indexOf("—") != -1) {
+                mDashCharacterArr.push({ title: elm.title, location: "ProblemEditor" });
             }
-            if(i.indexOf("—") != -1)
-            {
-                mDashCharacterArr.push({title:i,location:"spreadsheet"});
+            if (i.indexOf("—") != -1) {
+                mDashCharacterArr.push({ title: i, location: "spreadsheet" });
             }
         });
-        
-         if(i != "EMPTY" && !_found)
-        {
+
+        if (i != "EMPTY" && !_found) {
             missingLessons.push(i);
         }
     }
-    return {missingLessons,mDashCharacterArr};
+    return { missingLessons, mDashCharacterArr };
 }
 
-function similarity(s1, s2) {
-    var longer = s1;
-    var shorter = s2;
-    if (s1.length < s2.length) {
-      longer = s2;
-      shorter = s1;
-    }
-    var longerLength = longer.length;
-    if (longerLength == 0) {
-      return 1.0;
-    }
-    return (longerLength - editDistance(longer, shorter)) / parseFloat(longerLength);
-  }
-
-  function editDistance(s1, s2) {
-    s1 = s1.toLowerCase();
-    s2 = s2.toLowerCase();
-  
-    var costs = new Array();
-    for (var i = 0; i <= s1.length; i++) {
-      var lastValue = i;
-      for (var j = 0; j <= s2.length; j++) {
-        if (i == 0)
-          costs[j] = j;
-        else {
-          if (j > 0) {
-            var newValue = costs[j - 1];
-            if (s1.charAt(i - 1) != s2.charAt(j - 1))
-              newValue = Math.min(Math.min(newValue, lastValue),
-                costs[j]) + 1;
-            costs[j - 1] = lastValue;
-            lastValue = newValue;
-          }
-        }
-      }
-      if (i > 0)
-        costs[s2.length] = lastValue;
-    }
-    return costs[s2.length];
-  }
 
 
-function extractGradingObject(_subLessonObj)
-{
+
+function extractGradingObject(_subLessonObj) {
     //_subLessonObj.questions
     // This function will extract grading object from the questions array
     // grading object data will be read like other problem data in the beginiging.
-    
+
     let gradingObj;
     let gradingIndex;
-    if(_subLessonObj.questions)
-    {
-        _subLessonObj.questions.forEach((elm,index)=>{
-            if(elm.type == "grading")
-            {
-               //let cloneElm = cloneObject(elm);
-               let cloneElm = {...elm};
-                gradingObj ={};
+    if (_subLessonObj.questions) {
+        _subLessonObj.questions.forEach((elm, index) => {
+            if (elm.type == "grading") {
+                //let cloneElm = cloneObject(elm);
+                let cloneElm = { ...elm };
+                gradingObj = {};
                 gradingObj["_//"] = "grading object";
                 gradingObj.grades = cloneElm.grades;
                 gradingObj.feedbacks = cloneElm.feedbacks;
@@ -1418,131 +1193,127 @@ function extractGradingObject(_subLessonObj)
             }
         });
         //=============================
-        if(gradingObj)
-        {
+        if (gradingObj) {
             //console.log("gradingObj == ",gradingObj);
             _subLessonObj.gradingObject = gradingObj;
         }
     }
-    
-    if(Number.isInteger(gradingIndex))
-    {
+
+    if (Number.isInteger(gradingIndex)) {
         // after separating grading object data. It will delete grading object from questions array.
-       // questions.splice(gradingIndex, 1);
+        // questions.splice(gradingIndex, 1);
     }
     //return gradingObj;
 }
 
-function checkForLongSpacesInString(str)
-{
+function checkForLongSpacesInString(str) {
     let longSpaces = false;
     if (!str.replace(/\s/g, '').length) {
         //console.log('2012 string only contains whitespace (ie. spaces, tabs or line breaks)');
         longSpaces = true;
-      } 
+    }
     return longSpaces;
 }
 
 function getColumnDesc(unit, lesson, sublesson, toc, type) {
-  let _desc;
-  let _notAddColon;
-  let _colonStr;
-  let _displayOrder;
-  let _navigationId;
-  let headerData;
+    let _desc;
+    let _notAddColon;
+    let _colonStr;
+    let _displayOrder;
+    let _navigationId;
+    let headerData;
 
-  if (type == "unit") {
-    if (toc[unit]) {
-      if (toc[unit].children["EMPTY"]) {
-        _desc = toc[unit].children["EMPTY"].desc;
-        _notAddColon = toc[unit].children["EMPTY"].notAddColon;
-        _displayOrder = toc[unit].children["EMPTY"].displayOrder * 1;
-        _navigationId = toc[unit].children["EMPTY"].navigationId;
-        headerData = toc[unit].children["EMPTY"].headerData;
-      }
-    }
-  }
-
-  if (type == "lesson") {
-    if (toc[unit]) {
-      if (toc[unit].children[lesson]) {
-        _desc = toc[unit].children[lesson].desc;
-        _notAddColon = toc[unit].children[lesson].notAddColon;
-        _displayOrder = toc[unit].children[lesson].displayOrder * 1;
-        _navigationId = toc[unit].children[lesson].navigationId;
-        headerData = toc[unit].children[lesson].headerData;
-      }
-    }
-  }
-
-  if (type == "sublesson") {
-    if (toc[unit]) {
-      if (toc[unit].children[lesson]) {
-        if (toc[unit].children[lesson].children[sublesson]) {
-          _desc = toc[unit].children[lesson].children[sublesson].desc;
-          _notAddColon = toc[unit].children[lesson].children[sublesson].notAddColon;
-          _displayOrder = toc[unit].children[lesson].children[sublesson].displayOrder * 1;
-          _navigationId = toc[unit].children[lesson].children[sublesson].navigationId;
-          headerData = toc[unit].children[lesson].children[sublesson].headerData;
+    if (type == "unit") {
+        if (toc[unit]) {
+            if (toc[unit].children["EMPTY"]) {
+                _desc = toc[unit].children["EMPTY"].desc;
+                _notAddColon = toc[unit].children["EMPTY"].notAddColon;
+                _displayOrder = toc[unit].children["EMPTY"].displayOrder * 1;
+                _navigationId = toc[unit].children["EMPTY"].navigationId;
+                headerData = toc[unit].children["EMPTY"].headerData;
+            }
         }
-      }
     }
-  }
-  _colonStr = _notAddColon == "false" ? ":" : "";
-    return { desc: _desc, notAddColon: _notAddColon, colonStr: _colonStr, displayOrder: _displayOrder, navigationId: _navigationId,headerData };
+
+    if (type == "lesson") {
+        if (toc[unit]) {
+            if (toc[unit].children[lesson]) {
+                _desc = toc[unit].children[lesson].desc;
+                _notAddColon = toc[unit].children[lesson].notAddColon;
+                _displayOrder = toc[unit].children[lesson].displayOrder * 1;
+                _navigationId = toc[unit].children[lesson].navigationId;
+                headerData = toc[unit].children[lesson].headerData;
+            }
+        }
+    }
+
+    if (type == "sublesson") {
+        if (toc[unit]) {
+            if (toc[unit].children[lesson]) {
+                if (toc[unit].children[lesson].children[sublesson]) {
+                    _desc = toc[unit].children[lesson].children[sublesson].desc;
+                    _notAddColon = toc[unit].children[lesson].children[sublesson].notAddColon;
+                    _displayOrder = toc[unit].children[lesson].children[sublesson].displayOrder * 1;
+                    _navigationId = toc[unit].children[lesson].children[sublesson].navigationId;
+                    headerData = toc[unit].children[lesson].children[sublesson].headerData;
+                }
+            }
+        }
+    }
+    _colonStr = _notAddColon == "false" ? ":" : "";
+    return { desc: _desc, notAddColon: _notAddColon, colonStr: _colonStr, displayOrder: _displayOrder, navigationId: _navigationId, headerData };
 }
 
 function getLessonObj(currentProductAssignments, _problemObj) {
     // This function will group problem data to lesson ID
     _console("getLessonObj");
-    _console("currentProductAssignments = ",currentProductAssignments);
+    _console("currentProductAssignments = ", currentProductAssignments);
     let _lessons = {};
     for (var i = 0; i < currentProductAssignments.length; i++) {
         //console.log(i,currentProductAssignments[i]);
         if (
-          currentProductAssignments[i].lessons &&
-          currentProductAssignments[i].lessons.length > 0
+            currentProductAssignments[i].lessons &&
+            currentProductAssignments[i].lessons.length > 0
         ) {
-          //
-          if (!_lessons[currentProductAssignments[i].lessons[0].lessonId]) {
-            _lessons[currentProductAssignments[i].lessons[0].lessonId] = [];
-          }
-          let _obj = {};
-          _obj.lessonName = currentProductAssignments[i].lessons[0].lessonName;
-          _obj.subLessonIndex =
-            currentProductAssignments[i].lessons[0].subLessonIndex;
-            
+            //
+            if (!_lessons[currentProductAssignments[i].lessons[0].lessonId]) {
+                _lessons[currentProductAssignments[i].lessons[0].lessonId] = [];
+            }
+            let _obj = {};
+            _obj.lessonName = currentProductAssignments[i].lessons[0].lessonName;
+            _obj.subLessonIndex =
+                currentProductAssignments[i].lessons[0].subLessonIndex;
+
             let presentationData = currentProductAssignments[i].presentation_data;
-            
-            if(typeof presentationData == "string")
-            {
+
+            if (typeof presentationData == "string") {
                 presentationData = JSON.parse(
                     currentProductAssignments[i].presentation_data
-                  );
+                );
             }
-           
-         
+
+
             _obj.name = presentationData.subLessonName;
-          _obj.problems = currentProductAssignments[i].problems;
-          _obj.assignmentID = currentProductAssignments[i].id;
-          _obj.presentation_data = presentationData;
-          for (var j = 0; j < _obj.problems.length; j++) {
-            _obj.problems[j].data = _problemObj[_obj.problems[j].problemID];
-            if (
-              _obj.problems[j].points.length == 0 &&
-              _obj.problems[j].type == "open_response"
-            ) {
-              console.log(
-                i,
-                _obj.problems[j].problemID,
-                _obj.problems[j].points
-              );
+            _obj.problems = currentProductAssignments[i].problems;
+            _obj.assignmentID = currentProductAssignments[i].id;
+            _obj.presentation_data = presentationData;
+            for (var j = 0; j < _obj.problems.length; j++) {
+                _obj.problems[j].data = _problemObj[_obj.problems[j].problemID];
+                if (
+                    _obj.problems[j].points.length == 0 &&
+                    _obj.problems[j].type == "open_response"
+                ) {
+                    console.log(
+                        i,
+                        _obj.problems[j].problemID,
+                        _obj.problems[j].points
+                    );
+                }
             }
-          }
-          _lessons[currentProductAssignments[i].lessons[0].lessonId].push(_obj);
-          //
+            _lessons[currentProductAssignments[i].lessons[0].lessonId].push(_obj);
+            //
         }
-       
+
     }
     return _lessons;
 }
@@ -1560,58 +1331,47 @@ function getProblemData(problemLevelObjectAndProblemData) {
     return _problemObj;
 }
 
-function addDataToContent(_contents,_unitName,_tocData)
-{
+function addDataToContent(_contents, _unitName, _tocData) {
     // console.log("addDataToContent");
     //console.log("_contents = ",_contents);
     _contents.forEach((lessonObj) => {
         //console.log("lessonObj = ",lessonObj);
-        if(lessonObj)
-        {
+        if (lessonObj) {
             let lessonName = lessonObj.menuText;
-            let ignoreUnits = ["eBooks","End-of-Course Assessments"];
-            if(ignoreUnits.indexOf(_unitName) == -1)
-            {
-               lessonName = lessonName.split(":")[0];// Mostly some lesson and unit names contains (:) in OE data. But (:) is not present in spreadsheet. So remove colon (:) for comparision with OE data (:) 
+            let ignoreUnits = ["eBooks", "End-of-Course Assessments"];
+            if (ignoreUnits.indexOf(_unitName) == -1) {
+                lessonName = lessonName.split(":")[0];// Mostly some lesson and unit names contains (:) in OE data. But (:) is not present in spreadsheet. So remove colon (:) for comparision with OE data (:) 
             }
-            
+
             // console.log(_unitName,"::",lessonName,"::",_tocData[_unitName].children[lessonName]);
-            
-             if(_.size(_tocData[_unitName].children) == 1 && _tocData[_unitName].children["EMPTY"])
-             {
-                 lessonName = "EMPTY";
-             }
-     
-             //console.log(lessonName,_unitName,lessonObj);
-             if(_tocData[_unitName].children[lessonName])
-             {
-                 if(_tocData[_unitName].children[lessonName].resourceCode)
-                 {
-                     lessonObj.resourceCode = _tocData[_unitName].children[lessonName].resourceCode;
-                     //console.log("resourceCode ",_unitName,lessonName,_tocData[_unitName].children[lessonName].format);
-                     //console.log(_tocData[_unitName].children[lessonName].resourceCode,_tocData[_unitName].children[lessonName].format);
-                 }
-                 if(_tocData[_unitName].children[lessonName].assignable)
-                 {
-                     lessonObj.assignable = _tocData[_unitName].children[lessonName].assignable == "Yes" ? true : false;
-                 }
-                 if(_tocData[_unitName].children[lessonName].visibleStudent)
-                 {
-                     lessonObj.studentVisible = _tocData[_unitName].children[lessonName].visibleStudent == "Yes" ? true : false;
-                 }
-                 if(_tocData[_unitName].children[lessonName].version)
-                 {
+
+            if (_.size(_tocData[_unitName].children) == 1 && _tocData[_unitName].children["EMPTY"]) {
+                lessonName = "EMPTY";
+            }
+
+            //console.log(lessonName,_unitName,lessonObj);
+            if (_tocData[_unitName].children[lessonName]) {
+                if (_tocData[_unitName].children[lessonName].resourceCode) {
+                    lessonObj.resourceCode = _tocData[_unitName].children[lessonName].resourceCode;
+                    //console.log("resourceCode ",_unitName,lessonName,_tocData[_unitName].children[lessonName].format);
+                    //console.log(_tocData[_unitName].children[lessonName].resourceCode,_tocData[_unitName].children[lessonName].format);
+                }
+                if (_tocData[_unitName].children[lessonName].assignable) {
+                    lessonObj.assignable = _tocData[_unitName].children[lessonName].assignable == "Yes" ? true : false;
+                }
+                if (_tocData[_unitName].children[lessonName].visibleStudent) {
+                    lessonObj.studentVisible = _tocData[_unitName].children[lessonName].visibleStudent == "Yes" ? true : false;
+                }
+                if (_tocData[_unitName].children[lessonName].version) {
                     // console.log("version == ",_tocData[_unitName].children[lessonName].version)
-                     lessonObj.version = _tocData[_unitName].children[lessonName].version;
-                 }
-                 if(_tocData[_unitName].children[lessonName].displayOrder)
-                 {
+                    lessonObj.version = _tocData[_unitName].children[lessonName].version;
+                }
+                if (_tocData[_unitName].children[lessonName].displayOrder) {
                     // console.log("version == ",_tocData[_unitName].children[lessonName].version)
-                     lessonObj.displayOrder = _tocData[_unitName].children[lessonName].displayOrder * 1;
-                 }
-                 if(_tocData[_unitName].children[lessonName].notAddColon)
-                 {
-                     //lessonObj.notAddColon = _tocData[_unitName].children[lessonName].notAddColon;
+                    lessonObj.displayOrder = _tocData[_unitName].children[lessonName].displayOrder * 1;
+                }
+                if (_tocData[_unitName].children[lessonName].notAddColon) {
+                    //lessonObj.notAddColon = _tocData[_unitName].children[lessonName].notAddColon;
                     //===================================
                     /*
                         removeColonFromMenuText function will correct menu string of the lessons. 
@@ -1619,28 +1379,26 @@ function addDataToContent(_contents,_unitName,_tocData)
                         This function will check notAddColon property. If it is set to false then colon will be added. If it is set to true then colon will not be added.
                         This process of correcting menutext is done at the end of JSON creation. Because, if menutext is corrected at the start then it will induced issues in the json string. Because at many places in functions menutext with colon is considered in the logic.
                     */
-                 
-                   if(_tocData[_unitName].children[lessonName].notAddColon == "true" && _tocData[_unitName].children[lessonName].desc)
-                   {
+
+                    if (_tocData[_unitName].children[lessonName].notAddColon == "true" && _tocData[_unitName].children[lessonName].desc) {
                         //lessonObj.tmpMenuText = removeColonFromMenuText(lessonObj.menuText,_tocData[_unitName].children[lessonName]);
-                        lessonObj.menuText = removeColonFromMenuText(lessonObj.menuText,_tocData[_unitName].children[lessonName]);
-                   }
-                 
-                
+                        lessonObj.menuText = removeColonFromMenuText(lessonObj.menuText, _tocData[_unitName].children[lessonName]);
+                    }
+
+
                     //==================================
-             }
-                 
-                
-             }
+                }
+
+
+            }
         }
-        
+
     });
 
 }
 //===================
 
-function removeColonFromMenuText(menuText,_tocData)
-{
+function removeColonFromMenuText(menuText, _tocData) {
     /*
         This function will correct menu string of the lessons. 
         Because new requirment came to remove colon from menu string. 
@@ -1650,7 +1408,7 @@ function removeColonFromMenuText(menuText,_tocData)
     let str = String(menuText);
     str = str.split(_tocData.desc)[0];
     str = str.trim();
-    str = str.substring(0, str.length-1);
+    str = str.substring(0, str.length - 1);
     /*
     let _colonStr = "";
     if(_tocData.notAddColon == "false")
@@ -1658,75 +1416,64 @@ function removeColonFromMenuText(menuText,_tocData)
         _colonStr = ":";
     }
     */
-    str = str +" "+_tocData.desc;
+    str = str + " " + _tocData.desc;
     return str;
 }
 
 //===================
 
 
-function addProductResourcesSheetData(_jsonObj,_toc)
-{
+function addProductResourcesSheetData(_jsonObj, _toc) {
     _console("addProductResourcesSheetData");
     //console.log("_jsonObj = ",_jsonObj);
-   // console.log("_toc = ",_toc);
-    for(var i in _jsonObj)
-    {
-        if(i == "containers" || i == "contents")
-        {
+    // console.log("_toc = ",_toc);
+    for (var i in _jsonObj) {
+        if (i == "containers" || i == "contents") {
             let _unitArr = _jsonObj[i];
-            _unitArr.forEach((elm)=>{
-                if(elm)
-                {
+            _unitArr.forEach((elm) => {
+                if (elm) {
                     let _unitName = elm.menuText.split(":")[0];
-               
-                    if(elm.containers && elm.contents)
-                    {
-                        addDataToContent(elm.contents,_unitName,_toc);
-                        if(elm.containers.length > 0)
-                        {
+
+                    if (elm.containers && elm.contents) {
+                        addDataToContent(elm.contents, _unitName, _toc);
+                        if (elm.containers.length > 0) {
                             let _chapters = elm.containers;
-                            _chapters.forEach((chapter)=>{
-                               // let _chapterName = chapter.menuText.split(":")[0];
-                                let _chapterName = getChapterMenuText(chapter.menuText,_toc); 
+                            _chapters.forEach((chapter) => {
+                                // let _chapterName = chapter.menuText.split(":")[0];
+                                let _chapterName = getChapterMenuText(chapter.menuText, _toc);
                                 //console.log("_chapterName = ",_chapterName);
-                                if(chapter.containers && chapter.contents)
-                                {
-                                    addDataToContent(chapter.contents,_chapterName,_toc[_unitName].children);
-    
+                                if (chapter.containers && chapter.contents) {
+                                    addDataToContent(chapter.contents, _chapterName, _toc[_unitName].children);
+
                                 }
                             });
                         }
-                       
+
                     }
-                    else
-                    {
-                       // _console("%c Container content not defined.","color:red");
-                        addDataToContent([elm],_unitName,_toc);
+                    else {
+                        // _console("%c Container content not defined.","color:red");
+                        addDataToContent([elm], _unitName, _toc);
                     }
-                    
+
                 }
-               
+
             });
         }
-       
+
     }
-    
+
 }
 
-function getColumnNameObj(_sheet)
-{
+function getColumnNameObj(_sheet) {
     //console.log("getColumnNameObj");
     let columnHeaderObj = {};
-    for (var i in _sheet)
-    {
+    for (var i in _sheet) {
         let _firstChar = i.charAt(0);
         let _secondChar = i.charAt(1);
-        let _lastChar = i.charAt(i.length-1);
-        let _secondLast = i.charAt(i.length-2);
-        if(isNaN(Number(_secondLast)) && !isNaN(Number(_lastChar)) && _lastChar == "1")
-        {
-           // console.log("i = ",i,_sheet[i].v);
+        let _lastChar = i.charAt(i.length - 1);
+        let _secondLast = i.charAt(i.length - 2);
+        if (isNaN(Number(_secondLast)) && !isNaN(Number(_lastChar)) && _lastChar == "1") {
+            // console.log("i = ",i,_sheet[i].v);
             columnHeaderObj[_sheet[i].v] = i.split("1")[0];
             //columnHeaderObj[_sheet[i].v].columnName = i.split("1")[0];
         }
@@ -1734,22 +1481,19 @@ function getColumnNameObj(_sheet)
     return columnHeaderObj;
 }
 
-function getProductResources(_sheet)
-{
+function getProductResources(_sheet) {
     _console("getProductResources");
     //console.log("_sheet = ",_sheet);
     let columnObj = getColumnNameObj(_sheet);
-    _console("columnObj = ",columnObj);
-    let allowedFormats = ["Interactive Lesson","Online eBook"];
+    _console("columnObj = ", columnObj);
+    let allowedFormats = ["Interactive Lesson", "Online eBook"];
     let _productResObj = {};
-    for (var i in _sheet)
-    {
+    for (var i in _sheet) {
         let _firstChar = i.charAt(0);
         let _secondChar = i.charAt(1);
         //let _lastChar = i.charAt(i.length-1);
-       // let _secondLast = i.charAt(i.length-2);
-        if (_firstChar == "A" && !isNaN(Number(_secondChar)) && i != "A1")
-        {
+        // let _secondLast = i.charAt(i.length-2);
+        if (_firstChar == "A" && !isNaN(Number(_secondChar)) && i != "A1") {
             let rowNum = i.split("A")[1] * 1;
             let resourceCodeCol = columnObj["Resource Code"];
             let resourceTitleCol = columnObj["Resource Title"];
@@ -1767,58 +1511,53 @@ function getProductResources(_sheet)
             let _visibleStudent = _sheet[visibleStudentCol + rowNum] ? _sheet[visibleStudentCol + rowNum].v : undefined;
             let _format = _sheet[_formatCol + rowNum] ? _sheet[_formatCol + rowNum].v : undefined;
             let _resourceCategory = _sheet[_resourceCategoryCol + rowNum] ? _sheet[_resourceCategoryCol + rowNum].v : undefined;
-            if(_NodeLessons)
-            {
-                _NodeLessons =  _NodeLessons.replace(/\\/g, '');
+            if (_NodeLessons) {
+                _NodeLessons = _NodeLessons.replace(/\\/g, '');
             }
-            if(_lessonSublesson)
-            {
-                _lessonSublesson =  _lessonSublesson.replace(/\\/g, '');
+            if (_lessonSublesson) {
+                _lessonSublesson = _lessonSublesson.replace(/\\/g, '');
             }
-           
-            if(!_productResObj[_NodeLessons])
-            {
+
+            if (!_productResObj[_NodeLessons]) {
                 _productResObj[_NodeLessons] = {};
             }
-          
+
             let columnJ = _lessonSublesson;
-            if(!columnJ)
-            {
+            if (!columnJ) {
                 // at some instances like Introduction. There is no name for sublesson lesson. So in this case read the name from column b
-               // columnJ = _b;
+                // columnJ = _b;
                 columnJ = "EMPTY";
 
             }
             // console.log(i,rowNum,_NodeLessons,columnJ,_resourceCode,_resourceCategory);
-                if (allowedFormats.indexOf(_format) != -1) { //==
-                    if (_format != "Online eBook" || (_format == "Online eBook" && !(hasIn(_productResObj[_NodeLessons], columnJ) && hasIn(_productResObj[_NodeLessons][columnJ], 'resourceCode')))) {
-                        _productResObj[_NodeLessons][columnJ] = {};
-                        _productResObj[_NodeLessons][columnJ].resourceCode = _resourceCode;
-                        _productResObj[_NodeLessons][columnJ].assignable = _assignable;
-                        _productResObj[_NodeLessons][columnJ].visibleStudent = _visibleStudent;
-                        _productResObj[_NodeLessons][columnJ].format = _format;
-                        _productResObj[_NodeLessons][columnJ].row = rowNum;
-                    }
-                } //==
-            }
+            if (allowedFormats.indexOf(_format) != -1) { //==
+                if (_format != "Online eBook" || (_format == "Online eBook" && !(hasIn(_productResObj[_NodeLessons], columnJ) && hasIn(_productResObj[_NodeLessons][columnJ], 'resourceCode')))) {
+                    _productResObj[_NodeLessons][columnJ] = {};
+                    _productResObj[_NodeLessons][columnJ].resourceCode = _resourceCode;
+                    _productResObj[_NodeLessons][columnJ].assignable = _assignable;
+                    _productResObj[_NodeLessons][columnJ].visibleStudent = _visibleStudent;
+                    _productResObj[_NodeLessons][columnJ].format = _format;
+                    _productResObj[_NodeLessons][columnJ].row = rowNum;
+                }
+            } //==
         }
+    }
     //console.log("_productResObj = ",_productResObj);
-  return _productResObj;
+    return _productResObj;
 }
 
-function readColumnData(columnName,rowNum,_tocData,sheetColumnsObj)
-{
+function readColumnData(columnName, rowNum, _tocData, sheetColumnsObj) {
     return _tocData[sheetColumnsObj[columnName] + rowNum] ? String(_tocData[sheetColumnsObj[columnName] + rowNum].v) : undefined;
 }
 
 function createProblemTOC(workbook) {
     _console("createProblemTOC");
-   // _console("workbook = ",workbook);
+    // _console("workbook = ",workbook);
     // this function will create problemTOC from spreadsheet
     let programTOC = {};
     let _toc = {};
     let _tocData = workbook.Sheets["Program TOC"];
-    let _productResources =  getProductResources(workbook.Sheets["Product Resources"]);
+    let _productResources = getProductResources(workbook.Sheets["Product Resources"]);
     /*
         Note: Sheet column names are dynamic. Order of columns is not fixed.
         A => "Unit (Parent)",
@@ -1831,35 +1570,34 @@ function createProblemTOC(workbook) {
         G / H => "Not Add Colon"
     */
     let sheetColumns = [
-        "Unit (Parent)", 
-        "Lesson (Child)", 
-        "Sub-Lesson (Sibling)", 
-        "Description", 
-        "Assignment Display Name", 
-        "Version", 
+        "Unit (Parent)",
+        "Lesson (Child)",
+        "Sub-Lesson (Sibling)",
+        "Description",
+        "Assignment Display Name",
+        "Version",
         "Display Order",
         "Not Add Colon",
         "Navigation ID",
     ];
-    let sheetColumnsObj = getColumnName(sheetColumns,_tocData);
-    _console("_productResources = ",_productResources);
+    let sheetColumnsObj = getColumnName(sheetColumns, _tocData);
+    _console("_productResources = ", _productResources);
     for (var i in _tocData) {
         if (i.indexOf("A") != -1 && i != "A1") {
             let rowNum = i.split("A")[1] * 1;
 
-            let _a = readColumnData("Unit (Parent)",rowNum,_tocData,sheetColumnsObj);
-            let _b = readColumnData("Lesson (Child)",rowNum,_tocData,sheetColumnsObj);
-            let _c = readColumnData("Sub-Lesson (Sibling)",rowNum,_tocData,sheetColumnsObj);
-            let _d = readColumnData("Description",rowNum,_tocData,sheetColumnsObj);
-            let _e = readColumnData("Version",rowNum,_tocData,sheetColumnsObj);
-            let _f = readColumnData("Not Add Colon",rowNum,_tocData,sheetColumnsObj);
-            let _g = readColumnData("Display Order",rowNum,_tocData,sheetColumnsObj);
-            let _h = readColumnData("Navigation ID",rowNum,_tocData,sheetColumnsObj);
-            if(_e)
-            {
-                _e = _e.replace(/ /g,''); // remove spaces from string
+            let _a = readColumnData("Unit (Parent)", rowNum, _tocData, sheetColumnsObj);
+            let _b = readColumnData("Lesson (Child)", rowNum, _tocData, sheetColumnsObj);
+            let _c = readColumnData("Sub-Lesson (Sibling)", rowNum, _tocData, sheetColumnsObj);
+            let _d = readColumnData("Description", rowNum, _tocData, sheetColumnsObj);
+            let _e = readColumnData("Version", rowNum, _tocData, sheetColumnsObj);
+            let _f = readColumnData("Not Add Colon", rowNum, _tocData, sheetColumnsObj);
+            let _g = readColumnData("Display Order", rowNum, _tocData, sheetColumnsObj);
+            let _h = readColumnData("Navigation ID", rowNum, _tocData, sheetColumnsObj);
+            if (_e) {
+                _e = _e.replace(/ /g, ''); // remove spaces from string
             }
-            
+
             //=========== Replace commas in a string with slashesh =====================
             // This is done bcoz in some products, commas are added in a titles. And when we store this name in object, it adds slashesh to it. So to match it add slashesh to the sheet data.
             //_b =  _b.replace(/,/g, "^"); 
@@ -1868,8 +1606,7 @@ function createProblemTOC(workbook) {
             // This is done to fix the issue of EMPTY lesson as explain in tickete 16813. If resource data is present for unit and lesson in product resource tab, then unit name will be given to lesson.
             //https://perfectionlearning.sifterapp.com/issues/16813#comment_17454500
             //https://perfectionlearning.sifterapp.com/issues/16813#comment_17454660
-            if(_productResources[_a] && _productResources[_a][_a])
-            {
+            if (_productResources[_a] && _productResources[_a][_a]) {
                 // if lesson value is EMPTY in TOC then Unit is content item in nav menu. lesson name same as unit name
                 _b = _a;
             }
@@ -1893,14 +1630,13 @@ function createProblemTOC(workbook) {
                     _toc[_a] = {};
                     _toc[_a].children = {};
                     _toc[_a].type = "unit";
-                    
+
                 }
                 if (_b) {
-                    if(_b != "EMPTY")
-                    {
+                    if (_b != "EMPTY") {
                         programTOC[_a].push(_b);
                     }
-                   
+
                     if (_toc[_a] && _toc[_a].children) {
                         if (!_toc[_a].children[_b]) {
                             _toc[_a].children[_b] = {};
@@ -1922,14 +1658,13 @@ function createProblemTOC(workbook) {
                                 _toc[_a].children[_b].navigationId = _h;
                             }
                             //=============== Header data of TOC SIFTER 17028
-                            _toc[_a].children[_b].headerData = getTocHeaderData(_a,_b,_c,_d);
+                            _toc[_a].children[_b].headerData = getTocHeaderData(_a, _b, _c, _d);
                             // unit, lesson, sublesson , desc
                             //============================================
-                           // console.log("_a = ",_a," :: _b = ",_b);
-                           
-                            if(_productResources[_a] && _productResources[_a][_b])
-                            {
-                                _toc[_a].children[_b] = {..._toc[_a].children[_b],..._productResources[_a][_b]}
+                            // console.log("_a = ",_a," :: _b = ",_b);
+
+                            if (_productResources[_a] && _productResources[_a][_b]) {
+                                _toc[_a].children[_b] = { ..._toc[_a].children[_b], ..._productResources[_a][_b] }
                             }
                         }
                     }
@@ -1958,43 +1693,39 @@ function createProblemTOC(workbook) {
                                     _toc[_a].children[_b].children[_c].navigationId = _h;
                                 }
                                 //=============== Header data of TOC SIFTER 17028 
-                                _toc[_a].children[_b].children[_c].headerData = getTocHeaderData(_a,_b,_c,_d);
+                                _toc[_a].children[_b].children[_c].headerData = getTocHeaderData(_a, _b, _c, _d);
                                 //=============================================
                                 // Here this condition _b, _c is used. Bcoz in product resources node / lesson column may contain units or chapters. So _productResources object may contain units or chapters
                                 //console.log("_b = ",_b," :: _c = ",_c);
-                                if(_productResources[_b] && _productResources[_b][_c])
-                                {
-                                    _toc[_a].children[_b].children[_c] = {..._toc[_a].children[_b].children[_c],..._productResources[_b][_c]}
+                                if (_productResources[_b] && _productResources[_b][_c]) {
+                                    _toc[_a].children[_b].children[_c] = { ..._toc[_a].children[_b].children[_c], ..._productResources[_b][_c] }
                                 }
                             }
                         }
                     } // END OF C
                 } // END OF B
-                else
-                {
-                    if(_d)
-                    {
+                else {
+                    if (_d) {
                         _toc[_a].children["EMPTY"] = {};
                         _toc[_a].children["EMPTY"].desc = _d;
                     }
                     if (_f) {
                         _toc[_a].children["EMPTY"].notAddColon = _f;
                     }
-                    if(_productResources[_a] && _productResources[_a]["EMPTY"])
-                    {
-                        _toc[_a].children["EMPTY"] = {..._toc[_a].children["EMPTY"],..._productResources[_a]["EMPTY"]}
+                    if (_productResources[_a] && _productResources[_a]["EMPTY"]) {
+                        _toc[_a].children["EMPTY"] = { ..._toc[_a].children["EMPTY"], ..._productResources[_a]["EMPTY"] }
                         if (_e) {
                             _toc[_a].children["EMPTY"].version = _e;
                         }
                     }
                     if (_g && _toc[_a].children["EMPTY"]) {
                         _toc[_a].children["EMPTY"].displayOrder = _g;
-                     }
-                     if (_h && _toc[_a].children["EMPTY"]) {
+                    }
+                    if (_h && _toc[_a].children["EMPTY"]) {
                         _toc[_a].children["EMPTY"].navigationId = _h;
-                     }
-                      //=============== Header data of TOC SIFTER 17028 
-                      _toc[_a].children["EMPTY"].headerData = getTocHeaderData(_a,_b,_c,_d);;
+                    }
+                    //=============== Header data of TOC SIFTER 17028 
+                    _toc[_a].children["EMPTY"].headerData = getTocHeaderData(_a, _b, _c, _d);;
                 }
                 //=========== Header data of TOC SIFTER 17028 ==================
 
@@ -2008,17 +1739,16 @@ function createProblemTOC(workbook) {
     };
 }
 
-function getTocHeaderData(_a,_b,_c,_d)
-{
+function getTocHeaderData(_a, _b, _c, _d) {
     //console.log("getTocHeaderData");
     //console.log(_a,_b,_c,_d);
     let _arr = [];
-    let _unitVal = _a; 
-    let _lessonVal = (_a == _b) || (_b == "EMPTY") || !_b ? "": _b; 
+    let _unitVal = _a;
+    let _lessonVal = (_a == _b) || (_b == "EMPTY") || !_b ? "" : _b;
     let _subLessonVal = _c ? _c : "";
     let _descVal = _d ? _d : "";
     //================
-    _arr = [_unitVal,_lessonVal,_subLessonVal,_descVal];
+    _arr = [_unitVal, _lessonVal, _subLessonVal, _descVal];
     //console.log("_arr = ",_arr);
     return _arr;
 }
@@ -2099,160 +1829,156 @@ function readDescription(column, _tocData) {
     }
 }
 
-function getChapterMenuText(txt,_toc)
-{
-   // console.log("getChapterMenuText");
+function getChapterMenuText(txt, _toc) {
+    // console.log("getChapterMenuText");
     //console.log("before txt = ",txt);
-   // console.log("_toc = ",_toc);
+    // console.log("_toc = ",_toc);
     //if (txt.indexOf("Chapter") != -1 && txt.indexOf(":") != -1) 
-    if (txt.indexOf(":") != -1) 
-    {
+    if (txt.indexOf(":") != -1) {
         let _title = txt.split(":")[0].trim();
-        for(var i in _toc)
-        {
+        for (var i in _toc) {
             //console.log(i,_toc[i].children[_title]);
-            if(_toc[i].children[_title])
-            {
-               // console.log(_title,"=================== title is a chapter = ");
+            if (_toc[i].children[_title]) {
+                // console.log(_title,"=================== title is a chapter = ");
                 txt = _title;
             }
-          
+
         }
     }
-   // console.log("after txt = ",txt);
-   // txt = txt.split(":")[0].trim();
+    // console.log("after txt = ",txt);
+    // txt = txt.split(":")[0].trim();
     return txt;
 }
 
 function rearrangeChapters(_obj, programTOC, _toc) {
-  _console("rearrangeChapters");
-  // This function is for merging sublessons based on their children length.
-  // This function will check container of unit. If chapter has one children, it will get push to contents. otherwise it will remain in container.
-  let _units = _obj.containers;
-  let _arr = [];
-  for (var i = 0; i < _units.length; i++) {
-    let chapters = _units[i].containers;
-    let _unitName = _units[i].menuText.split(":")[0].trim();
-    chapters = mapChaptersWithSpreadsheet(
-      chapters,
-      programTOC[_unitName],
-      _unitName,
-      _toc
-    );
-    if (chapters) {
-      for (var j = 0; j < chapters.length; j++) {
-        if (chapters[j] && chapters[j].contents.length == 2) {
-          /*
-                    See detailed explanation about this code in this comment https://perfectionlearning.sifterapp.com/issues/14384#comment_17082727
-                    This code is written to filter correct lessons. Many times junk lessons are added in the units which are of no use. This code will check the scenario where in TOC single lesson is present and in OE more than 1 lesson is present. It will cross check lesson name with the TOC and will select correct lesson from OE data.
-                    */
-          let chapterMenuText = getChapterMenuText(chapters[j].menuText, _toc);
-          let _sheetChildrensLength = _.size(
-            _toc[_unitName].children[chapterMenuText].children
-          );
+    _console("rearrangeChapters");
+    // This function is for merging sublessons based on their children length.
+    // This function will check container of unit. If chapter has one children, it will get push to contents. otherwise it will remain in container.
+    let _units = _obj.containers;
+    let _arr = [];
+    for (var i = 0; i < _units.length; i++) {
+        let chapters = _units[i].containers;
+        let _unitName = _units[i].menuText.split(":")[0].trim();
+        chapters = mapChaptersWithSpreadsheet(
+            chapters,
+            programTOC[_unitName],
+            _unitName,
+            _toc
+        );
+        if (chapters) {
+            for (var j = 0; j < chapters.length; j++) {
+                if (chapters[j] && chapters[j].contents.length == 2) {
+                    /*
+                              See detailed explanation about this code in this comment https://perfectionlearning.sifterapp.com/issues/14384#comment_17082727
+                              This code is written to filter correct lessons. Many times junk lessons are added in the units which are of no use. This code will check the scenario where in TOC single lesson is present and in OE more than 1 lesson is present. It will cross check lesson name with the TOC and will select correct lesson from OE data.
+                              */
+                    let chapterMenuText = getChapterMenuText(chapters[j].menuText, _toc);
+                    let _sheetChildrensLength = _.size(
+                        _toc[_unitName].children[chapterMenuText].children
+                    );
 
-         // let _tempContent;
-           let _tempContent = chapters[j].contents[0];
+                    // let _tempContent;
+                    let _tempContent = chapters[j].contents[0];
 
-          for (var k = 0; k < chapters[j].contents.length; k++) {
-            if (_toc[_unitName].children[chapters[j].contents[k].menuText]) {
-              _tempContent = chapters[j].contents[k];
+                    for (var k = 0; k < chapters[j].contents.length; k++) {
+                        if (_toc[_unitName].children[chapters[j].contents[k].menuText]) {
+                            _tempContent = chapters[j].contents[k];
+                        }
+                    }
+
+                    if (_sheetChildrensLength == 0) {
+                        chapters[j].contents = [];
+                        chapters[j].contents.push(_tempContent);
+                    }
+                }
+
+                //
+                if (chapters[j].contents.length == 1) {
+                    let chapterMenuText = getChapterMenuText(chapters[j].menuText, _toc);
+                    let lessonChildLength = _.size(
+                        _toc[_unitName].children[chapterMenuText].children
+                    );
+
+                    let mergeSublesson;
+
+                    if (lessonChildLength == 0) mergeSublesson = true;
+
+                    if (mergeSublesson) {
+                        let lessonObj = {};
+                        lessonObj.menuText = chapters[j].menuText;
+                        lessonObj.questions = [];
+                        lessonObj.sublessons = [];
+                        if (chapters[j].navID) {
+                            lessonObj.navID = chapters[j].navID;
+                        }
+                        if (chapters[j].headerData) {
+                            lessonObj.headerData = chapters[j].headerData;
+                        }
+                        if (chapters[j].contents[0].sublessons.length == 1) {
+                            lessonObj.questions = chapters[j].contents[0].sublessons[0].questions;
+                            if (chapters[j].contents[0].sublessons[0].gradingObject) {
+                                lessonObj.gradingObject = chapters[j].contents[0].sublessons[0].gradingObject;
+                            }
+                        } else {
+                            lessonObj.sublessons = chapters[j].contents[0].sublessons;
+                        }
+                        _units[i].contents.push(lessonObj);
+
+                        delete chapters[j];
+                    }
+                }
+
+                if (
+                    chapters[j] &&
+                    chapters[j].contents &&
+                    chapters[j].contents.length == 0 &&
+                    chapters[j].containers &&
+                    chapters[j].containers.length == 0
+                ) {
+                    let lessonObj = {};
+                    lessonObj.menuText = chapters[j].menuText;
+                    lessonObj.questions = [];
+                    lessonObj.sublessons = [];
+                    if (chapters[j].navID) {
+                        lessonObj.navID = chapters[j].navID;
+                    }
+                    if (chapters[j].headerData) {
+                        lessonObj.headerData = chapters[j].headerData;
+                    }
+                    if (chapters[j].displayOrder) {
+                        lessonObj.displayOrder = chapters[j].displayOrder;
+                    }
+                    _units[i].contents.push(lessonObj);
+
+                    delete chapters[j];
+                }
             }
-          }
-
-          if (_sheetChildrensLength == 0) {
-            chapters[j].contents = [];
-            chapters[j].contents.push(_tempContent);
-          }
-        }
-
-        //
-        if (chapters[j].contents.length == 1) {
-          let chapterMenuText = getChapterMenuText(chapters[j].menuText, _toc);
-          let lessonChildLength = _.size(
-            _toc[_unitName].children[chapterMenuText].children
-          );
-           
-          let mergeSublesson;
-
-          if (lessonChildLength == 0) mergeSublesson = true;
-
-          if (mergeSublesson) {
-            let lessonObj = {};
-            lessonObj.menuText = chapters[j].menuText;
-            lessonObj.questions = [];
-            lessonObj.sublessons = [];
-            if (chapters[j].navID) {
-                lessonObj.navID = chapters[j].navID;
+            //============ Clean Container
+            let newArr = [];
+            for (var j = 0; j < chapters.length; j++) {
+                if (chapters[j]) {
+                    newArr.push(chapters[j]);
+                }
             }
-            if (chapters[j].headerData) {
-                lessonObj.headerData = chapters[j].headerData;
-            }
-              if (chapters[j].contents[0].sublessons.length == 1) {
-                  lessonObj.questions = chapters[j].contents[0].sublessons[0].questions;
-                  if (chapters[j].contents[0].sublessons[0].gradingObject) {
-                      lessonObj.gradingObject = chapters[j].contents[0].sublessons[0].gradingObject;
-                  }
-              } else {
-                  lessonObj.sublessons = chapters[j].contents[0].sublessons;
-              }
-              _units[i].contents.push(lessonObj);
-            
-            delete chapters[j];
-          }
-        }
+            _units[i].containers = newArr;
 
-        if (
-          chapters[j] &&
-          chapters[j].contents &&
-          chapters[j].contents.length == 0 &&
-          chapters[j].containers &&
-          chapters[j].containers.length == 0
-        ) {
-          let lessonObj = {};
-          lessonObj.menuText = chapters[j].menuText;
-          lessonObj.questions = [];
-          lessonObj.sublessons = [];
-          if (chapters[j].navID) {
-            lessonObj.navID = chapters[j].navID;
+            _arr.push(_units[i]);
+        } else {
+            // If unit name is not in PrograM TOC then delete it
+            //delete _units[i];
         }
-        if (chapters[j].headerData) {
-            lessonObj.headerData = chapters[j].headerData;
-        }
-        if (chapters[j].displayOrder) {
-            lessonObj.displayOrder = chapters[j].displayOrder;
-        }
-            _units[i].contents.push(lessonObj);
-
-          delete chapters[j];
-        }
-      }
-      //============ Clean Container
-      let newArr = [];
-      for (var j = 0; j < chapters.length; j++) {
-        if (chapters[j]) {
-          newArr.push(chapters[j]);
-        }
-      }
-      _units[i].containers = newArr;
-
-      _arr.push(_units[i]);
-    } else {
-      // If unit name is not in PrograM TOC then delete it
-      //delete _units[i];
     }
-  }
-  _obj.containers = _arr;
+    _obj.containers = _arr;
 }
 
-function mapChaptersWithSpreadsheet(chapters, programTOC, _unitName,_toc) {
+function mapChaptersWithSpreadsheet(chapters, programTOC, _unitName, _toc) {
     //console.log("mapChaptersWithSpreadsheet");
     //console.log("chapters = ",chapters);
     if (!programTOC) return false;
     let newArr = [];
     for (var i = 0; i < chapters.length; i++) {
-        let chapterText = getChapterMenuText(chapters[i].menuText,_toc);
-         let isFound = programTOC.filter(elm => elm === chapterText);
+        let chapterText = getChapterMenuText(chapters[i].menuText, _toc);
+        let isFound = programTOC.filter(elm => elm === chapterText);
         // console.log("chapterText = ",chapterText," :: isFound = ",isFound);
         let isSimilarFound;
         if (isFound.length == 0) {
@@ -2269,7 +1995,7 @@ function mapChaptersWithSpreadsheet(chapters, programTOC, _unitName,_toc) {
         // This ondition of Intro and review is an exception. As in general product chapter name should be matched to spreadsheet chapter name
         // but here product chapter name is Unit 1 Introduction and in spreadsheet only Introduction is mentioned.
         if (chapterText.indexOf(_unitName + " Introduction") != -1 && isFound.length == 0) {
-           // console.log(489);
+            // console.log(489);
             isFound = programTOC.filter(elm => elm === "Introduction");
             //console.log("isFound = ",isFound);
         }
@@ -2283,17 +2009,15 @@ function mapChaptersWithSpreadsheet(chapters, programTOC, _unitName,_toc) {
             }
             // This is added for Connection ELA. As writing unit contains 1 excess chapter Informational writing.
             let duplaicateNameArr = newArr.filter(ele => ele.menuText === chapters[i].menuText);
-           if(duplaicateNameArr.length == 0)
-           {
-            newArr.push(chapters[i]);
-           }
-           else
-           {
-               //console.log(chapters[i].menuText," :: duplaicateNameArr = ",duplaicateNameArr);
-           }
-           //newArr.push(chapters[i]);
-           
-            
+            if (duplaicateNameArr.length == 0) {
+                newArr.push(chapters[i]);
+            }
+            else {
+                //console.log(chapters[i].menuText," :: duplaicateNameArr = ",duplaicateNameArr);
+            }
+            //newArr.push(chapters[i]);
+
+
         }
     }
     return newArr;
@@ -2339,24 +2063,23 @@ function addMissingChaptersAssessmentData(obj, resoursesUnitWiseDataForAutomatio
                 // console.log("missingChapters = ",missingChapters);
                 //================== Sort missing chapters as container and contents ==========
                 //
-                if(_assignments)
-                {
-                for (var k = 0; k < missingChapters.length; k++) {
-                    if (missingChapters[k].lessons.length > 0) {
-                        let chapterJson = getMissingChaptersJson(missingChapters[k], _assignments, _problemObj);
-                        if (chapterJson) {
-                            _units[i].containers.push(chapterJson);
-                        }
-                    } else {
-                        let chapterJson = getMissingChaptersJson(missingChapters[k], _assignments, _problemObj);
-                        if (chapterJson) {
-                            _units[i].contents.push(chapterJson);
+                if (_assignments) {
+                    for (var k = 0; k < missingChapters.length; k++) {
+                        if (missingChapters[k].lessons.length > 0) {
+                            let chapterJson = getMissingChaptersJson(missingChapters[k], _assignments, _problemObj);
+                            if (chapterJson) {
+                                _units[i].containers.push(chapterJson);
+                            }
+                        } else {
+                            let chapterJson = getMissingChaptersJson(missingChapters[k], _assignments, _problemObj);
+                            if (chapterJson) {
+                                _units[i].contents.push(chapterJson);
+                            }
                         }
                     }
                 }
+
             }
-                
-        }
         }
     }
 }
@@ -2371,7 +2094,7 @@ function getMissingChaptersJson(missingChapters, _assignments, _problemObj) {
         assessObj = {};
         for (var j = 0; j < missingChapters.lessons.length; j++) {
             let _chapterName = missingChapters.lessons[j].name;
-            if (_chapterName == "Summative Assessment") _chapterName = "Summative"; 
+            if (_chapterName == "Summative Assessment") _chapterName = "Summative";
             let lessonObj = {};
             lessonObj = getAssessmentJson(_chapterName, _assignments, _problemObj);
             lessonsArr.push(lessonObj);
@@ -2409,37 +2132,33 @@ function addMissingLessonsAssessmentData(_obj, currentProductAssignments, _probl
         let chapters = _units[i].containers;
         //console.log("_units[i] == ",_units[i].menuText);
         let cloneChapters = [...chapters];
-       // console.log("cloneChapters == ",cloneChapters);
+        // console.log("cloneChapters == ",cloneChapters);
         for (var j = 0; j < chapters.length; j++) {
             let _chapterID = chapters[j].id;
             //console.log("_chapterID == ",_chapterID,chapters[j]);
             let assignments = currentProductAssignments.filter((ele) => {
-                    return ele.lessons.length > 0 ? ele.lessons[0].lessonId === _chapterID : false;
+                return ele.lessons.length > 0 ? ele.lessons[0].lessonId === _chapterID : false;
             });
-           // console.log("assignments = ",assignments);
+            // console.log("assignments = ",assignments);
             let chapterObj = {};
             if (assignments.length == 1) {
                 chapterObj = getAssessmentJson(assignments[0].lessons[0].lessonName, assignments, _problemObj);
                 if (chapterObj) {
-                   // console.log("Missing chapter");
-                   // console.log("_units[i] = ",_units[i]..menuText);
-                   // console.log("Missing chapterObj = ",chapterObj.menuText);
+                    // console.log("Missing chapter");
+                    // console.log("_units[i] = ",_units[i]..menuText);
+                    // console.log("Missing chapterObj = ",chapterObj.menuText);
                     let _matchFound = false;
-                    for (var k = 0; k < chapters[j].contents.length; k++)
-                    {
-                        if(chapters[j].contents[k].menuText == chapterObj.menuText)
-                        {
-                            if(chapterObj.menuText.indexOf(":") != -1)
-                            {
+                    for (var k = 0; k < chapters[j].contents.length; k++) {
+                        if (chapters[j].contents[k].menuText == chapterObj.menuText) {
+                            if (chapterObj.menuText.indexOf(":") != -1) {
                                 chapterObj.menuText = (chapterObj.menuText.split(":")[1]).trim();
                             }
-                           // console.log("connect testing match found");
+                            // console.log("connect testing match found");
                             chapters[j].contents[k] = chapterObj;
                             _matchFound = true;
                         }
                     }
-                    if(!_matchFound)
-                    {
+                    if (!_matchFound) {
                         chapters[j].contents.push(chapterObj);
                     }
                     //
@@ -2450,67 +2169,7 @@ function addMissingLessonsAssessmentData(_obj, currentProductAssignments, _probl
     }
 }
 
-function createMissingChaptersJSON(_obj, _productStructure, _problemObj) {
-    console.log("createMissingChaptersJSON");
-    let _containers = _obj.containers;
-    for (var i = 0; i < _containers.length; i++) {
-        let _unitName = _containers[i].menuText.split(":")[0].trim();
-        let _assignments;
-        for (var j = 0; j < _productStructure.length; j++) {
-            if (_productStructure[j].title.indexOf(_unitName) != -1) {
-                _assignments = _productStructure[j]._assignments;
-            }
-        }
-        //========================
-        for (var j = 0; j < _containers[i].containers.length; j++) {
-            if (_containers[i].containers[j].name && _containers[i].containers[j].lessons.length == 0) {
-                let assessmentName = _containers[i].containers[j].name;
-                let assessObj = {};
-                if (_assignments) {
-                    for (var k = 0; k < _assignments.length; k++) {
-                        if (_assignments[k].lessons[0].lessonName.indexOf(assessmentName) != -1) {
-                            assessObj.menuText = assessmentName;
-                            assessObj.questions = createProblemObject(_assignments[k].problems, _problemObj);
-                            assessObj.sublessons = [];
-                            extractGradingObject(assessObj);
-                        }
-                    }
-                }
-                if (assessObj.menuText) {
-                    _containers[i].contents.push(assessObj);
-                    _containers[i].containers.splice(j, 1)
-                }
-            }
-            //=====================
-            if (_containers[i].containers[j].name && _containers[i].containers[j].lessons.length > 0) {
-                let chapObj = {};
-                chapObj.menuText = _containers[i].containers[j].name;
-                chapObj.contents = [];
-                for (var m = 0; m < _containers[i].containers[j].lessons.length; m++) {
-                    let assessmentName = _containers[i].containers[j].lessons[m].name;
-                    if (assessmentName == "Summative Assessment") assessmentName = "Summative";
-                    let assessObj = {};
-                    if (_assignments) {
-                        for (var k = 0; k < _assignments.length; k++) {
-                            if (_assignments[k].lessons[0].lessonName.indexOf(assessmentName) != -1) {
-                                if (assessmentName == "Summative") assessmentName = "Summative Assessment";
-                                assessObj.menuText = assessmentName;
-                                assessObj.questions = createProblemObject(_assignments[k].problems, _problemObj);
-                                assessObj.sublessons = [];
-                                extractGradingObject(assessObj);
-                            }
-                        }
-                    }
-                    if (assessObj.menuText) {
-                        chapObj.contents.push(assessObj);
-                        chapObj.containers = [];
-                    }
-                }
-                _containers[i].containers[j] = chapObj;
-            }
-        }
-    }
-}
+
 
 function rearrangesublessons(arr) {
     // this function will arrange sublesson array in proper order based on sublesson index
@@ -2525,13 +2184,13 @@ function rearrangesublessons(arr) {
         newArr.push(newObj[i]);
     }
     */
-   /*
-        Above code was commented, as object is sorted using sublesson index. So it was creating missing sublesson issue.
-        So below sorting is done on basis of sublesson index.
-        If the Lesson has duplicate sublessons, both lessons will be visible in array with same sublesson index.
-   */
-   
-    let sortedArr = arr.sort(function(a, b) {
+    /*
+         Above code was commented, as object is sorted using sublesson index. So it was creating missing sublesson issue.
+         So below sorting is done on basis of sublesson index.
+         If the Lesson has duplicate sublessons, both lessons will be visible in array with same sublesson index.
+    */
+
+    let sortedArr = arr.sort(function (a, b) {
         return (a.subLessonIndex - b.subLessonIndex);
     });
 
@@ -2561,8 +2220,7 @@ function AddProductInfo(_obj, programSheet, productInfo) {
     }
     _obj.product.version = version;
     _obj.product.series = program_graphic;
-    if(productInfo && productInfo[0] && productInfo[0].Allow_Full_Access)
-    {
+    if (productInfo && productInfo[0] && productInfo[0].Allow_Full_Access) {
         _obj.product.allowFullAccess = productInfo[0].Allow_Full_Access;
     }
 }
@@ -2575,8 +2233,7 @@ function mergeSingleSublesson(_obj) {
     for (var m = 0; m < _array.length; m++) {
         let containerData = _obj[_array[m]];
         for (var i = 0; i < containerData.length; i++) {
-            if(containerData[i])
-            {
+            if (containerData[i]) {
                 if (containerData[i].contents.length > 0) {
                     mergeContentSublesson(containerData[i].contents);
                 }
@@ -2585,7 +2242,7 @@ function mergeSingleSublesson(_obj) {
                 }
                 checkEmptyContainerItem(containerData[i]);
             }
-          
+
         }
     }
 }
@@ -2619,8 +2276,7 @@ function mergeContentSublesson(contents) {
                 let _sublessons = _contents[j].sublessons;
                 if (_sublessons.length == 1) {
                     _contents[j].questions = _contents[j].sublessons[0].questions;
-                    if(_contents[j].sublessons[0].gradingObject)
-                    {
+                    if (_contents[j].sublessons[0].gradingObject) {
                         _contents[j].gradingObject = _contents[j].sublessons[0].gradingObject;
                     }
                     _contents[j].sublessons = [];
@@ -2630,7 +2286,7 @@ function mergeContentSublesson(contents) {
     }
 }
 
-function filterDataAsPerExcel(_obj, programTOC, product_resources,_toc, errorList) {
+function filterDataAsPerExcel(_obj, programTOC, product_resources, _toc, errorList) {
     _console("filterDataAsPerExcel");
     //console.log("product_resources = ",product_resources);
     //Product Resources
@@ -2642,27 +2298,23 @@ function filterDataAsPerExcel(_obj, programTOC, product_resources,_toc, errorLis
     for (var i in programTOC) {
         let chapterObj;
         for (var j = 0; j < _obj.containers.length; j++) {
-           if (_obj.containers[j].menuText.indexOf(i) != -1) 
-            {
+            if (_obj.containers[j].menuText.indexOf(i) != -1) {
                 /*
                     Changes for Sifter 16240: Issue is unit menutext contains name with description. It was creating issue in the old check when 2 names are similar. So now, unit name is extracted by separating desc from the name and that is checked in the code while matching.
                 */
                 let _baseUnitName = _obj.containers[j].menuText;
-                if(_toc[i] && _toc[i].children["EMPTY"] && _toc[i].children["EMPTY"].desc)
-                {
+                if (_toc[i] && _toc[i].children["EMPTY"] && _toc[i].children["EMPTY"].desc) {
                     _baseUnitName = i;
                 }
                 //==================================
-                if (i == _baseUnitName) 
-                {
-                chapterObj = _obj.containers[j]
-            }
-               
+                if (i == _baseUnitName) {
+                    chapterObj = _obj.containers[j]
+                }
+
             }
         }
-        if(!chapterObj)
-        {
-            errorList.push({type:"error",msg:"⚠ JSON Error: Import Spreadsheet Unit structure is not matching with the problemEditor Unit Structure. Unit "+i+" found in import spreadsheet but not found in problemEditor data. Upload button is disabled because product structure JSON is not generated properly."});
+        if (!chapterObj) {
+            errorList.push({ type: "error", msg: "⚠ JSON Error: Import Spreadsheet Unit structure is not matching with the problemEditor Unit Structure. Unit " + i + " found in import spreadsheet but not found in problemEditor data. Upload button is disabled because product structure JSON is not generated properly." });
         }
         if (programTOC[i].length == 0) {
             // Here this is a exception if chapters length is greater than 1 ,  like APUSH - AP US HISTORY INTERACTIVE
@@ -2706,20 +2358,18 @@ function filterDataAsPerExcel(_obj, programTOC, product_resources,_toc, errorLis
                 chapterObj = chapterUsed;
             }
             // console.log("chapterObj = ",chapterObj);
-            if(chapterObj)
-            {
-               // _mainContents.push(chapterObj);
+            if (chapterObj) {
+                // _mainContents.push(chapterObj);
             }
             _mainContents.push(chapterObj);
-            
+
         } else {
             // console.log("chapterObj = ",chapterObj);
-            if(chapterObj)
-            {
+            if (chapterObj) {
                 //_mainContainer.push(chapterObj);
             }
             _mainContainer.push(chapterObj);
-           
+
         }
     }
     delete _obj.containers;
@@ -2734,8 +2384,7 @@ function addDummyFeedbackData(_obj) {
     _console("addDummyFeedbackData");
     let _containers = _obj.containers;
     for (var i = 0; i < _containers.length; i++) {
-        if(_containers[i])
-        {
+        if (_containers[i]) {
             if (_containers[i].containers.length > 0) {
                 addFeedbackToContainers(_containers[i].containers)
             }
@@ -2813,18 +2462,18 @@ function addFeedbacktoQuestions(questions, _sublessonName, _lessonName) {
 }
 
 function createProblemObject(_problemList, _problemInfo) {
-      // console.log("createProblemObject");
-   // let invalidProblemType = ["expository_text", "text_annotation_item", "teacher_material", "grading", "multi_part_answer", "collaboration_table","matching","annotation_practice_item"];
+    // console.log("createProblemObject");
+    // let invalidProblemType = ["expository_text", "text_annotation_item", "teacher_material", "grading", "multi_part_answer", "collaboration_table","matching","annotation_practice_item"];
     let allowedProblemTypes = [
-      "open_response",
-      "essay",
-      "radio",
-      "table_items",
-      "multiTab",
-      "check",
-      "multi_part_answer",
-      "editing_tasks_choice",
-      "grading"
+        "open_response",
+        "essay",
+        "radio",
+        "table_items",
+        "multiTab",
+        "check",
+        "multi_part_answer",
+        "editing_tasks_choice",
+        "grading"
     ];
     //table_items removed from above array as in tickete https://perfectionlearning.sifterapp.com/issues/11115. table items questions are required
     // allowed problem types, openresponse, essay, radio, tableItems, check (checkbox)
@@ -2837,20 +2486,17 @@ function createProblemObject(_problemList, _problemInfo) {
                 _problemType = _problemInfo[_problemList[n].problemID].answer_type;
             }
         }
-        if(_problemType == "table_items")
-        {
+        if (_problemType == "table_items") {
             // remove this
             // console.log(_problemList[n].problemID,_problemType,_problemInfo[_problemList[n].problemID]);
         }
-         //console.log(_problemList[n].problemID,_problemType,_problemInfo[_problemList[n].problemID],_problemInfo[_problemList[n].problemID].answer_type);
+        //console.log(_problemList[n].problemID,_problemType,_problemInfo[_problemList[n].problemID],_problemInfo[_problemList[n].problemID].answer_type);
         //if (invalidProblemType.indexOf(_problemType) == -1) 
-        if (allowedProblemTypes.indexOf(_problemType) != -1) 
-        {
+        if (allowedProblemTypes.indexOf(_problemType) != -1) {
             addRubricData(_problemList[n].problemID, _problemInfo);
             if (_problemType == "multiTab") {
                 //console.log(_problemList[n].problemID,_problemInfo[_problemList[n].problemID]);
-                if(_problemInfo[_problemList[n].problemID].interactive_frames && _problemInfo[_problemList[n].problemID].interactive_frames.length > 0)
-                {
+                if (_problemInfo[_problemList[n].problemID].interactive_frames && _problemInfo[_problemList[n].problemID].interactive_frames.length > 0) {
                     //
                     let _pointArr = _problemInfo[_problemList[n].problemID].interactive_frames[0].point;
                     let _qList = _problemInfo[_problemList[n].problemID].problemList;
@@ -2860,8 +2506,7 @@ function createProblemObject(_problemList, _problemInfo) {
                             //if (_problemInfo[_qList[i]] && (_problemInfo[_qList[i]].type))
                             // Above condition added bcoz of issue 12386. As radio buttons dont have type. So they were removed from json
                             // I have checked and verify issue 12386. It is working fine.
-                            if (_problemInfo[_qList[i]]) 
-                            {
+                            if (_problemInfo[_qList[i]]) {
                                 let p_type = _problemInfo[_qList[i]].type;
                                 if (!p_type) {
                                     if (_problemInfo[_qList[i]].answer_type) {
@@ -2869,8 +2514,7 @@ function createProblemObject(_problemList, _problemInfo) {
                                     }
                                 }
                                 //if (invalidProblemType.indexOf(p_type) == -1)
-                                if (allowedProblemTypes.indexOf(p_type) != -1)  
-                                {
+                                if (allowedProblemTypes.indexOf(p_type) != -1) {
                                     let questionID = _qList[i];
                                     let grades = [_pointArr[i]];
                                     _queCounter++;
@@ -2884,7 +2528,7 @@ function createProblemObject(_problemList, _problemInfo) {
                     }
                     //
                 }
-                
+
             } else {
                 let questionID = _problemList[n].problemID;
                 let grades = _problemList[n].points;
@@ -3078,27 +2722,26 @@ function getProblemType(_problemInfo) {
     if (!problem_type) {
         problem_type = _problemInfo.answer_type;
     }
-    switch(problem_type)
-    {
+    switch (problem_type) {
         case "radio":
-        problem_type = "RadioButton";
-        break;
+            problem_type = "RadioButton";
+            break;
         case "open_response":
         case "essay":
-        problem_type = "OpenResponse";
-        break;
+            problem_type = "OpenResponse";
+            break;
         case "table_items":
-        problem_type = "TableItems";
-        break;
+            problem_type = "TableItems";
+            break;
         case "check":
-        problem_type = "Checkbox";
-        break;
+            problem_type = "Checkbox";
+            break;
         case "multi_part_answer":
-        problem_type = "DragAndDrop";
-        break;
+            problem_type = "DragAndDrop";
+            break;
         case "editing_tasks_choice":
-        problem_type = "Dropdown";
-        break;
+            problem_type = "Dropdown";
+            break;
     }
     return problem_type;
 }
@@ -3126,262 +2769,248 @@ function getAnswerRowVal(answerContents) {
 }
 
 function arrangeAnswersAsPerRows(_problemInfo, newAnswerArr) {
-  let _interactive_frames = _problemInfo.interactive_frames;
-  let tempArr = [];
-  let filteredArr = [];
-  for (var i = 0; i < _interactive_frames.length; i++) {
-    if (
-      _interactive_frames[i].contents &&
-      _interactive_frames[i].contents.length > 0 &&
-      _interactive_frames[i].column_row_vals
-    ) {
-      let _column_row_vals = _interactive_frames[i].column_row_vals;
-      for (var j in _column_row_vals) {
-        let _columnRowArr = _column_row_vals[j];
-        for (var k = 0; k < _columnRowArr.length; k++) {
-          //|[
-          if (_columnRowArr[k].indexOf("|[") != -1) {
-            let _answerIndex = _columnRowArr[k].split("|[")[1].split("]|")[0];
-            _answerIndex = _answerIndex * 1;
-            tempArr[k] = newAnswerArr[_answerIndex];
-          }
+    let _interactive_frames = _problemInfo.interactive_frames;
+    let tempArr = [];
+    let filteredArr = [];
+    for (var i = 0; i < _interactive_frames.length; i++) {
+        if (
+            _interactive_frames[i].contents &&
+            _interactive_frames[i].contents.length > 0 &&
+            _interactive_frames[i].column_row_vals
+        ) {
+            let _column_row_vals = _interactive_frames[i].column_row_vals;
+            for (var j in _column_row_vals) {
+                let _columnRowArr = _column_row_vals[j];
+                for (var k = 0; k < _columnRowArr.length; k++) {
+                    //|[
+                    if (_columnRowArr[k].indexOf("|[") != -1) {
+                        let _answerIndex = _columnRowArr[k].split("|[")[1].split("]|")[0];
+                        _answerIndex = _answerIndex * 1;
+                        tempArr[k] = newAnswerArr[_answerIndex];
+                    }
+                }
+            }
         }
-      }
     }
-  }
-  tempArr.map((value) => {
-    filteredArr.push(value);
-  });
-  return filteredArr;
+    tempArr.map((value) => {
+        filteredArr.push(value);
+    });
+    return filteredArr;
 }
 
 function getGridType(_problemInfo, _finalAnswerArr) {
-  let _interactive_frames = _problemInfo.interactive_frames;
-  let gridType;
-  if (_finalAnswerArr.length == 1) {
-    gridType = "column";
-  } else {
-    let gridCheckArr = [];
-    for (var i = 0; i < _interactive_frames.length; i++) {
-      if (
-        _interactive_frames[i].contents &&
-        _interactive_frames[i].contents.length > 0 &&
-        _interactive_frames[i].column_row_vals
-      ) {
-        let _column_row_vals = _interactive_frames[i].column_row_vals[i];
-        let _contents = _interactive_frames[i].contents;
-        if (_column_row_vals.length == _contents.length + 1) {
-          gridCheckArr.push(1);
-        } else {
-          gridCheckArr.push(0);
-        }
-      }
-    }
-    if (gridCheckArr.length == _.sum(gridCheckArr)) {
-      gridType = "grid";
+    let _interactive_frames = _problemInfo.interactive_frames;
+    let gridType;
+    if (_finalAnswerArr.length == 1) {
+        gridType = "column";
     } else {
-      gridType = "grid_modified";
+        let gridCheckArr = [];
+        for (var i = 0; i < _interactive_frames.length; i++) {
+            if (
+                _interactive_frames[i].contents &&
+                _interactive_frames[i].contents.length > 0 &&
+                _interactive_frames[i].column_row_vals
+            ) {
+                let _column_row_vals = _interactive_frames[i].column_row_vals[i];
+                let _contents = _interactive_frames[i].contents;
+                if (_column_row_vals.length == _contents.length + 1) {
+                    gridCheckArr.push(1);
+                } else {
+                    gridCheckArr.push(0);
+                }
+            }
+        }
+        if (gridCheckArr.length == _.sum(gridCheckArr)) {
+            gridType = "grid";
+        } else {
+            gridType = "grid_modified";
+        }
     }
-  }
-  return gridType;
+    return gridType;
 }
 
 function getProblemAnswerObj(_problemInfo, problem_type, questionID) {
     //console.log("getProblemAnswerObj");
     let answerObj = {};
-    switch(problem_type)
-    {
+    switch (problem_type) {
         case "OpenResponse":
-        answerObj.tabs = [];
-        answerObj.tabs.push({
-            text: "",
-            fields: [getTextContent(_problemInfo.answer)]
-        });
-        break;
+            answerObj.tabs = [];
+            answerObj.tabs.push({
+                text: "",
+                fields: [getTextContent(_problemInfo.answer)]
+            });
+            break;
         case "TableItems":
-       // let _answerModes = _problemInfo.interactive_frames[0].answer_modes;
-        let _columnRowVal = getAnswerRowVal(_problemInfo.interactive_frames[0].contents);
-       answerObj.tabs = [];
-        answerObj.tabs.push({
-            text: "",
-            fields: _columnRowVal
-        });
-        break;
+            // let _answerModes = _problemInfo.interactive_frames[0].answer_modes;
+            let _columnRowVal = getAnswerRowVal(_problemInfo.interactive_frames[0].contents);
+            answerObj.tabs = [];
+            answerObj.tabs.push({
+                text: "",
+                fields: _columnRowVal
+            });
+            break;
         case "RadioButton":
-        answerObj.option = [];
-        answerObj.option = getTextContent(_problemInfo.answer) * 1;
-        break;
+            answerObj.option = [];
+            answerObj.option = getTextContent(_problemInfo.answer) * 1;
+            break;
         case "Checkbox":
-        answerObj.option = [];
-        let answerArray = _problemInfo.answer.split(',');
-        answerArray = answerArray.map((elm)=>{
-            return elm * 1;
-        });
-        answerArray = answerArray.sort();
-        answerObj.option = answerArray;
-        break;
+            answerObj.option = [];
+            let answerArray = _problemInfo.answer.split(',');
+            answerArray = answerArray.map((elm) => {
+                return elm * 1;
+            });
+            answerArray = answerArray.sort();
+            answerObj.option = answerArray;
+            break;
         case "DragAndDrop":
-        answerObj.tileLocations = [];
-        let answerArr = JSON.parse("["+_problemInfo.answer+"]");
-        let _finalAnswerArr = [];
-        answerArr.forEach((elm)=>
-        {
-            //if(elm != "" && elm.indexOf(",") != -1)
-           if(elm != "")
-            {
-                let _arr = elm.split(",");
-                _finalAnswerArr.push(_arr);
+            answerObj.tileLocations = [];
+            let answerArr = JSON.parse("[" + _problemInfo.answer + "]");
+            let _finalAnswerArr = [];
+            answerArr.forEach((elm) => {
+                //if(elm != "" && elm.indexOf(",") != -1)
+                if (elm != "") {
+                    let _arr = elm.split(",");
+                    _finalAnswerArr.push(_arr);
+                }
+            });
+            /*
+                DragAndDrop types Added on 26/8/22
+                As per tickete https://perfectionlearning.sifterapp.com/issues/13625, Drag and DROP are classified into 3 forms.
+                Column, Grid and modified Grid
+                Column: eg. Connection ELA grade 9 , Unit 1 , Chapter 1, Lesson 1, Preview Concepts, Vocabulary, question 1 (219006)
+                [0]
+                [1]
+                [2]
+                [3]
+                [4]
+    
+                Grid: eg. Vocabu-Lit (I/9 OR Grade 9) Lesson 1: Two Poems by Emily Dickinson (poetry),  Synonyms and Antonyms, question 1 (241078)
+                [0] [1] [2]
+                [3] [4] [5]
+                [6] [7] [8]
+    
+                modified Grid: eg. Vocabu-Lit (I/9 OR Grade 9) Lesson 1: Two Poems by Emily Dickinson (poetry),  Synonyms and Antonyms, question 1 (253519)
+                [-] [-] [0] [-]
+                [-] [-] [1] [-]
+                [-] [-] [2] [-]
+                [-] [-] [-] [3]
+                [-] [-] [-] [4]
+            
+                Logic: _finalAnswerArr variable will contain, array of columns.
+                If _finalAnswerArr 
+                => length is 1, it means it contains only single column array.
+                => length is 2, And all the column arrays have same length. Means it is of grid form. Grid numbering logic will be used.
+                => if the length is 2, and length of columns are different. one is 3 and other is 2. Then it is of the form modified grid. Then modified grid logic will be used.
+    
+            
+            */
+
+            let gridType = getGridType(_problemInfo, _finalAnswerArr);
+            //================================
+            let newAnswerArr = [];
+            if (gridType == "column") {
+                newAnswerArr = _finalAnswerArr[0].map((elm) => {
+                    return elm * 1;
+                });
             }
-        });
-        /*
-            DragAndDrop types Added on 26/8/22
-            As per tickete https://perfectionlearning.sifterapp.com/issues/13625, Drag and DROP are classified into 3 forms.
-            Column, Grid and modified Grid
-            Column: eg. Connection ELA grade 9 , Unit 1 , Chapter 1, Lesson 1, Preview Concepts, Vocabulary, question 1 (219006)
-            [0]
-            [1]
-            [2]
-            [3]
-            [4]
+            if (gridType == "grid") {
+                let columns = _finalAnswerArr.length;
+                let rows = _finalAnswerArr[0].length;
+                for (var i = 0; i < rows; i++) {
+                    for (var j = 0; j < columns; j++) {
+                        // console.log(i,j,_finalAnswerArr[j][i]);
+                        newAnswerArr.push(_finalAnswerArr[j][i] * 1);
 
-            Grid: eg. Vocabu-Lit (I/9 OR Grade 9) Lesson 1: Two Poems by Emily Dickinson (poetry),  Synonyms and Antonyms, question 1 (241078)
-            [0] [1] [2]
-            [3] [4] [5]
-            [6] [7] [8]
-
-            modified Grid: eg. Vocabu-Lit (I/9 OR Grade 9) Lesson 1: Two Poems by Emily Dickinson (poetry),  Synonyms and Antonyms, question 1 (253519)
-            [-] [-] [0] [-]
-            [-] [-] [1] [-]
-            [-] [-] [2] [-]
-            [-] [-] [-] [3]
-            [-] [-] [-] [4]
-        
-            Logic: _finalAnswerArr variable will contain, array of columns.
-            If _finalAnswerArr 
-            => length is 1, it means it contains only single column array.
-            => length is 2, And all the column arrays have same length. Means it is of grid form. Grid numbering logic will be used.
-            => if the length is 2, and length of columns are different. one is 3 and other is 2. Then it is of the form modified grid. Then modified grid logic will be used.
-
-        
-        */
-
-        let gridType = getGridType(_problemInfo,_finalAnswerArr);
-        //================================
-       let newAnswerArr = [];
-       if(gridType == "column")
-       {
-         newAnswerArr = _finalAnswerArr[0].map((elm)=>
-         {
-            return elm * 1;
-         });
-       }
-       if(gridType == "grid")
-       {
-         let columns =  _finalAnswerArr.length;
-         let rows = _finalAnswerArr[0].length;
-         for(var i=0;i<rows;i++)
-         {
-            for(var j=0;j<columns;j++)
-            {
-                // console.log(i,j,_finalAnswerArr[j][i]);
-                newAnswerArr.push(_finalAnswerArr[j][i] * 1);
-               
-            }
-         }
-       }
-
-       if(gridType == "grid_modified")
-       {
-            for(var i=0;i<_finalAnswerArr.length;i++)
-            {
-                for(var j=0;j<_finalAnswerArr[i].length;j++)
-                {
-                    // console.log(i,j,_finalAnswerArr[i][j]);
-                    newAnswerArr.push(_finalAnswerArr[i][j] * 1);
-                    
+                    }
                 }
             }
-            /*
-                Rearrange as per row position :
-                This logic was added because of the issue https://perfectionlearning.sifterapp.com/issues/14623
-                When grid modified logic was written for tickete https://perfectionlearning.sifterapp.com/issues/13625, this scenario is not considered. Now the answer array will be arranged as per row numbers
-            */
-            //newAnswerArr = arrangeAnswersAsPerRows(_problemInfo,newAnswerArr);
-            newAnswerArr = getRowWiseAnswerData(_problemInfo,newAnswerArr);
-       }
 
-      
-       //=============================
-        //console.log("questionID = ",questionID);
-       // console.log("_problemInfo = ",_problemInfo);
-       // console.log("answerArr = ",answerArr);
-       // console.log("_finalAnswerArr = ",_finalAnswerArr);
-       // console.log("gridType = ",gridType);
-       // console.log("newAnswerArr = ",newAnswerArr);
-       // console.log("===================================");
-        answerObj.tileLocations =  newAnswerArr;
-        break;
+            if (gridType == "grid_modified") {
+                for (var i = 0; i < _finalAnswerArr.length; i++) {
+                    for (var j = 0; j < _finalAnswerArr[i].length; j++) {
+                        // console.log(i,j,_finalAnswerArr[i][j]);
+                        newAnswerArr.push(_finalAnswerArr[i][j] * 1);
+
+                    }
+                }
+                /*
+                    Rearrange as per row position :
+                    This logic was added because of the issue https://perfectionlearning.sifterapp.com/issues/14623
+                    When grid modified logic was written for tickete https://perfectionlearning.sifterapp.com/issues/13625, this scenario is not considered. Now the answer array will be arranged as per row numbers
+                */
+                //newAnswerArr = arrangeAnswersAsPerRows(_problemInfo,newAnswerArr);
+                newAnswerArr = getRowWiseAnswerData(_problemInfo, newAnswerArr);
+            }
+
+
+            //=============================
+            //console.log("questionID = ",questionID);
+            // console.log("_problemInfo = ",_problemInfo);
+            // console.log("answerArr = ",answerArr);
+            // console.log("_finalAnswerArr = ",_finalAnswerArr);
+            // console.log("gridType = ",gridType);
+            // console.log("newAnswerArr = ",newAnswerArr);
+            // console.log("===================================");
+            answerObj.tileLocations = newAnswerArr;
+            break;
         case "Dropdown":
             {
-              let answerArray = _problemInfo.answer.split(",");
-              let optionsMap = answerArray.map((elm)=>{
-                let _num = elm * 1;
-                return _problemInfo.answer_val_map[_num];
+                let answerArray = _problemInfo.answer.split(",");
+                let optionsMap = answerArray.map((elm) => {
+                    let _num = elm * 1;
+                    return _problemInfo.answer_val_map[_num];
                 });
                 answerObj.options = optionsMap;
             }
-        break;
+            break;
     }
-     return answerObj;
+    return answerObj;
 }
 
 
-function getRowWiseAnswerData(_problemInfo,nArr)
-{
+function getRowWiseAnswerData(_problemInfo, nArr) {
     // This function will arrange answer data rowwise.
     let _interactive_frames = _problemInfo.interactive_frames;
-     let tableDataRowWise = [];
-     let answerDataRowWise = [];
+    let tableDataRowWise = [];
+    let answerDataRowWise = [];
     for (var i = 0; i < _interactive_frames.length; i++) {
         if (
-          _interactive_frames[i].contents &&
-          _interactive_frames[i].contents.length > 0 &&
-          _interactive_frames[i].column_row_vals
+            _interactive_frames[i].contents &&
+            _interactive_frames[i].contents.length > 0 &&
+            _interactive_frames[i].column_row_vals
         ) {
             //=============================
-          let _column_row_vals = _interactive_frames[i].column_row_vals;
-          for (var j in _column_row_vals) {
-            let _columnRowArr = _column_row_vals[j];
-            for (var k = 0; k < _columnRowArr.length; k++) {
-              //|[
-              if (_columnRowArr[k].indexOf("|[") != -1) {
-                let _answerIndex = _columnRowArr[k].split("|[")[1].split("]|")[0];
-                _answerIndex = _answerIndex * 1;
-                if(!tableDataRowWise[k])
-                {
-                    tableDataRowWise[k] = [];
+            let _column_row_vals = _interactive_frames[i].column_row_vals;
+            for (var j in _column_row_vals) {
+                let _columnRowArr = _column_row_vals[j];
+                for (var k = 0; k < _columnRowArr.length; k++) {
+                    //|[
+                    if (_columnRowArr[k].indexOf("|[") != -1) {
+                        let _answerIndex = _columnRowArr[k].split("|[")[1].split("]|")[0];
+                        _answerIndex = _answerIndex * 1;
+                        if (!tableDataRowWise[k]) {
+                            tableDataRowWise[k] = [];
+                        }
+                        tableDataRowWise[k].push({
+                            dropId: _answerIndex,
+                            dropAnswer: nArr[_answerIndex]
+                        });
+                    }
                 }
-                tableDataRowWise[k].push({
-                    dropId:_answerIndex,
-                    dropAnswer:nArr[_answerIndex]
-                });
-              }
             }
-          }
         }
-      }
-      //===========================
-    tableDataRowWise.forEach((elm)=>{
-        if(elm.length > 0)
-        {
-            elm.forEach((innerElm)=>{
+    }
+    //===========================
+    tableDataRowWise.forEach((elm) => {
+        if (elm.length > 0) {
+            elm.forEach((innerElm) => {
                 answerDataRowWise.push(innerElm.dropAnswer);
-              });
+            });
         }
-      });
+    });
 
     //console.log("tableDataRowWise = ",tableDataRowWise);
-   // console.log("answerDataRowWise = ",answerDataRowWise);
+    // console.log("answerDataRowWise = ",answerDataRowWise);
     return answerDataRowWise;
 }
 
@@ -3415,15 +3044,14 @@ function getTextContent(str) {
     return strip_html_tags(str); // function added for node application as document dont work in node
 }
 
-function strip_html_tags(str)
-{
-   if ((str===null) || (str===''))
-       return false;
-  else
-   str = str.toString();
-   str = str.replace(/<[^>]*>/g, '');
-   str = String(str).replace(/\n/g, '');
-  return str;
+function strip_html_tags(str) {
+    if ((str === null) || (str === ''))
+        return false;
+    else
+        str = str.toString();
+    str = str.replace(/<[^>]*>/g, '');
+    str = String(str).replace(/\n/g, '');
+    return str;
 }
 
 function getEditingTaskChoiceData(data) {
@@ -4230,9 +3858,9 @@ function getTagFromProblemData(allProblemsData) {
         tagArray
     };
 }
-async function getAllAssignmentProblems(assignments, addProblemDataInSheet,applicationType) {
+async function getAllAssignmentProblems(assignments, addProblemDataInSheet, applicationType) {
     _console("getAllAssignmentProblems");
-    _console("applicationType = ",applicationType);
+    _console("applicationType = ", applicationType);
     let problemIds = [];
     let problemLevelObj = {};
     let tagsData = [];
@@ -4242,7 +3870,7 @@ async function getAllAssignmentProblems(assignments, addProblemDataInSheet,appli
     if (problemIds.length > 0) {
         let problemsData = await getProblemListPromise({
             ids: problemIds
-        },applicationType);
+        }, applicationType);
         let innerProblemIds = [];
         forEach(problemsData, function (problemData) {
             if (problemData && problemData.presentation_data && problemData.presentation_data.type) {
@@ -4262,7 +3890,7 @@ async function getAllAssignmentProblems(assignments, addProblemDataInSheet,appli
         if (innerProblemIds && innerProblemIds.length) {
             let innerProblemsData = await getProblemListPromise({
                 ids: innerProblemIds
-            },applicationType);
+            }, applicationType);
             if (innerProblemsData) {
                 innerProblemsData = innerProblemsData.map(function (multiTabInnerProblemData) {
                     multiTabInnerProblemData.problemLevel = 1;
@@ -4279,9 +3907,8 @@ async function getAllAssignmentProblems(assignments, addProblemDataInSheet,appli
         // Below code is added with discussion with sachine to get rubric problems
         let _rubricProblemID = [];
         forEach(problemsData, function (problemData) {
-                let problemType = problemData.presentation_data.type;
-            if(!problemType && problemData.answer_type)
-            {
+            let problemType = problemData.presentation_data.type;
+            if (!problemType && problemData.answer_type) {
                 problemType = problemData.answer_type;
             }
             if (problemData && problemData.presentation_data && problemType) {
@@ -4300,7 +3927,7 @@ async function getAllAssignmentProblems(assignments, addProblemDataInSheet,appli
         if (_rubricProblemID && _rubricProblemID.length) {
             let _rubricProblemData = await getProblemListPromise({
                 ids: _rubricProblemID
-            },applicationType);
+            }, applicationType);
             if (_rubricProblemData) {
                 problemsData = [...problemsData, ..._rubricProblemData]
             }
@@ -4311,7 +3938,7 @@ async function getAllAssignmentProblems(assignments, addProblemDataInSheet,appli
             problemsData = updatedProblemData.allProblemsData;
             let tagIdArray = updatedProblemData.tagArray;
             if (tagIdArray.length !== 0) {
-                tagsData = await getTagsPromise(tagIdArray,applicationType);
+                tagsData = await getTagsPromise(tagIdArray, applicationType);
             }
         }
         return {
