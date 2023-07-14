@@ -1,4 +1,3 @@
-//import { flatten, keys, map, uniq } from "lodash";
 import pkg from 'lodash';
 const { flatten, keys, map, uniq } = pkg;
 
@@ -670,6 +669,8 @@ export const CHAPTER_NAME_COLUMN_NAME = "Chapter Name";
 export const LESSON_INDEX_COLUMN_NAME = "Lesson INDEX";
 export const LESSON_ID_COLUMN_NAME = "Lesson ID";
 export const LESSON_NAME_COLUMN_NAME = "Lesson Name";
+export const SHOW_ACTIVE_READING_COLUMN_NAME = "Show Active Reading";
+export const SHOW_IN_ACTIVE_READING_TAB_COLUMN_NAME = "Show in Active Reading Tab";
 export const ASSIGNMENT_INDEX_COLUMN_NAME = "Assignment INDEX";
 export const ASSIGNMENT_ID_COLUMN_NAME = "Assignment ID";
 export const PROBLEM_INDEX_COLUMN_NAME = "Problem INDEX";
@@ -732,6 +733,7 @@ export const COLUMN_SEQUENCE_FOR_PRODUCT_STRUCTURE = [
 	LESSON_ID_COLUMN_NAME,
 	ASSIGNMENT_INDEX_COLUMN_NAME,
 	ASSIGNMENT_ID_COLUMN_NAME,
+	SHOW_ACTIVE_READING_COLUMN_NAME,
 	PROBLEM_INDEX_COLUMN_NAME,
 	UNIQUE_KEY_COLUMN_NAME,
 	TEMPLATE_TYPE_COLUMN_NAME,
@@ -1175,3 +1177,11 @@ export const HREF_WITHOUT_ENDING_DOUBLE_QUOTE_REGEX = /href="([^\'\"]+)/g;
 export const MAX_NUMBER_OF_IMPORT_PROBLEMS = 30;
 export const ERROR_MESSAGE_FOR_IMPORT_PROBLEMS = `This import problem utility only allows ${MAX_NUMBER_OF_IMPORT_PROBLEMS} problems to be imported at a time.`
 
+export const PACING_TIME_UNITS = { DAY:'day', HOUR:"hour", MINUTE: "minute" };
+
+export const PACING_DROPDOWN_OPTIONS = [
+	{ label: "Select", value: "select" },
+	{ label: "Day/s", value: PACING_TIME_UNITS.DAY },
+	{ label: "Hour/s", value: PACING_TIME_UNITS.HOUR },
+	{ label: "Minute/s", value: PACING_TIME_UNITS.MINUTE }
+];

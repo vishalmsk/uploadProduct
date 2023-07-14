@@ -59,7 +59,8 @@ import {
   ESCAPED_CHARACTER_SUBSTITUTE_REGEX,
   ESCAPED_COMMA_REGEX,
   LESSON_NAMES_MAPPPING_CONSTANT,
-  RESOURCES_KEY
+  RESOURCES_KEY,
+  PACING_TIME_UNITS
 } from '../../utils/Constants.js';
 import * as constants from '../../utils/Constants.js';
 import {
